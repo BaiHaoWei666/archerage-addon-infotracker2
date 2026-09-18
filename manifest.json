@@ -2,10 +2,17 @@
   "schemaVersion": 1,
   "name": "infotracker2",
   "displayName": "InfoTracker v2",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "category": "資訊",
   "description": "資訊追蹤：任務、每日挑戰、角色資訊、今日淨收入、副本",
   "changelog": [
+    {
+      "version": "1.0.3",
+      "date": "2026-09-19",
+      "notes": [
+        "GitHub 專案名稱加入 archerage-addon- 前綴，更新文件連結；本機插件資料夾名稱保持不變"
+      ]
+    },
     {
       "version": "1.0.2",
       "date": "2026-09-19",
