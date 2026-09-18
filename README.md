@@ -8,7 +8,7 @@ ArcheRage 的任務與角色資訊追蹤插件，提供分類懸浮窗、追蹤�
 
 可透過 [插件管理器](https://github.com/BaiHaoWei666/archerage-addons-installer/releases/latest) 安裝及更新，無須提供權杖。
 
-手動安裝：從 [本專案 Release](https://github.com/BaiHaoWei666/infotracker2/releases/latest) 下載 `infotracker2.zip`，解壓縮到遊戲的 `Addon` 目錄，使 `Addon/infotracker2/toc.g` 存在，再於遊戲啟用或重新載入插件。請下載 Release 附件，不使用 Source code ZIP。
+手動安裝：從 [本專案 Release](https://github.com/BaiHaoWei666/archerage-addon-infotracker2/releases/latest) 下載 `infotracker2.zip`，解壓縮到遊戲的 `Addon` 目錄，使 `Addon/infotracker2/toc.g` 存在，再於遊戲啟用或重新載入插件。請下載 Release 附件，不使用 Source code ZIP。
 
 ## 功能與操作
 

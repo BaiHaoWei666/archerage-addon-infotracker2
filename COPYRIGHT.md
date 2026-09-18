@@ -12,7 +12,7 @@ infotracker2 基於 infotracker 的部分程式、資料與功能延伸開發。
 
 這段同意未指定 MIT、GPL 等標準授權，也未完整說明第三人的再授權條件，本檔不替作者擴張授權或替整個專案套用新授權。原作者提到的「open source」保留原意；公開原始碼本身不等同於已採用符合 OSI 定義的開源授權。參見 [OSI 開源定義](https://opensource.org/osd)。
 
-原始碼：[infotracker2](https://github.com/BaiHaoWei666/infotracker2)。
+原始碼：[infotracker2](https://github.com/BaiHaoWei666/archerage-addon-infotracker2)。
 
 ## 從 infotracker 沿用及延伸的內容
 
