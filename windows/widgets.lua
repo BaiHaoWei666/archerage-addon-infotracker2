@@ -262,13 +262,6 @@ function UI.IsShiftDown()
     return true
 end
 
-function UI.EffectiveToAnchorOffset(value)
-    if F_LAYOUT ~= nil and F_LAYOUT.CalcDontApplyUIScale ~= nil then
-        return F_LAYOUT.CalcDontApplyUIScale(value)
-    end
-    return value / ITV2.GetUiScale()
-end
-
 -- ============================================
 -- 捲動區域
 -- 清單項目放在 area.content 裡，用 area:Place() 擺放（y 為清單內座標）。
