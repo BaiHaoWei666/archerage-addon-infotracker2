@@ -1,5 +1,5 @@
 -- 缺少座標時保留原始存檔；正常位置不輸出，重複呼叫不洗版。
-local function Check(saved, expected, reason, truncated, beforeReport)
+local function Check(saved, expected, reason, truncated, beforeReport, actual)
     local messages = {}
     ADDON = {LoadData = function() return saved end}
     ITV2 = {
@@ -13,7 +13,11 @@ local function Check(saved, expected, reason, truncated, beforeReport)
     ITV2.Settings.Load()
     if beforeReport then beforeReport(saved) end
     local initialized = false
-    ITV2.Popout = {Init = function() initialized = true end}
+    ITV2.Popout = {Init = function() initialized = true end,
+        GetPosition = function()
+            if actual then return actual[1], actual[2] end
+            return ITV2.Settings.popoutPosX, ITV2.Settings.popoutPosY
+        end}
     -- 沿用正式初始化順序，但不重讀存檔，以驗證快照不受後續操作影響。
     local load = ITV2.Settings.Load
     ITV2.Settings.Load = function() end
@@ -22,7 +26,7 @@ local function Check(saved, expected, reason, truncated, beforeReport)
     assert(initialized and messages[#messages] == 'LOADED', '診斷阻斷初始化')
     table.remove(messages)
     local count = #messages
-    ITV2.Settings.ReportPositionFallback()
+    ITV2.Settings.ReportLoadedPosition()
     assert(#messages == count, '診斷重複輸出')
     if expected then
         assert(count >= 2, '缺少位置時未輸出')
@@ -30,7 +34,7 @@ local function Check(saved, expected, reason, truncated, beforeReport)
         assert((messages[count] == 'POSITION_DATA_TRUNCATED') == (truncated == true), '截短狀態錯誤')
         assert(count <= 28, '診斷訊息過多')
         local parts = {}
-        for i = 2, truncated and count - 1 or count do
+        for i = reason == 'POSITION_APPLY_MISMATCH' and 3 or 2, truncated and count - 1 or count do
             assert(#messages[i] < 220, '聊天分段過長')
             assert(not messages[i]:find('[%z\1-\31]'), '聊天訊息包含控制字元')
             parts[#parts + 1] = messages[i]:gsub('^%[ITV2 position %d+/%d+%] ', '')
@@ -74,3 +78,9 @@ ADDON.LoadData = function() return nil end
 settings.Load()
 assert(settings.popoutPosX == nil and settings.popoutPosY == nil, '重新載入沿用過期座標')
 print('PASS: 正式位置診斷、原始快照、輸出上限、異常資料防護、初始化與座標相容性')
+
+Check({popout={x=120,y=240,anchor='header'}}, '["x"]=120', 'POSITION_APPLY_MISMATCH', false, nil, {460,64})
+Check({popout={x=120,y=240,anchor='header'}}, nil, nil, false, nil, {120.5,239.5})
+Check({popout={x=120,y=240,anchor='header'}}, '["y"]=240', 'POSITION_APPLY_MISMATCH', false, nil, {})
+Check({popout={x=120,y=240,anchor='header'}}, '["x"]=120', 'POSITION_APPLY_MISMATCH', false,
+    function(saved) saved.popout.x = 999 end, {460,64})

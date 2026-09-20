@@ -479,6 +479,11 @@ body:SetHandler("OnUpdate", function(self, dt)
     Popout.Refresh()
 end)
 
+-- 回傳標題欄的有效座標，與位置存檔使用相同座標系。
+function Popout.GetPosition()
+    return header:GetEffectiveOffset()
+end
+
 -- 載入設定後呼叫
 function Popout.Init()
     AnchorHeader()
