@@ -70,6 +70,6 @@ python scripts/build-release.py
 
 ## 發布
 
-完成程式與測試後，調高 manifest 版本並加入 changelog，再執行封裝。封裝會同步本機 version.txt，在 dist 產生 ZIP、含 SHA-256 的 manifest、說明及圖示，並核對 ZIP 內容。開發 Junction 的版本也須讀回確認。
+使用者未明確要求升版或發布時，保留目前版本；一般修改、測試、提交或推送不自動升版。執行封裝時會同步本機 version.txt，在 dist 產生 ZIP、含 SHA-256 的 manifest、說明及圖示，並核對 ZIP 內容。開發 Junction 的版本也須讀回確認。
 
 push main／PR 會執行 CI；推送單一 `v<版本>` tag 會在測試成功後發布上述附件。已發布版本不重用。完整整合格式見 [管理器插件規格](https://github.com/BaiHaoWei666/archerage-addons-installer/blob/main/docs/addon-format.md)。
