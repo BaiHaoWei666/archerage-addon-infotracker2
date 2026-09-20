@@ -7,6 +7,10 @@ local texts = {}
 if isCN then
     texts.EDITOR_TITLE = "资讯追踪 - 设定"
     texts.LOADED = "[InfoTracker v2] 已载入"
+    texts.POSITION_DATA_MISSING = "[InfoTracker v2] 未读取到设置存档，使用默认位置。首次使用属于正常情况；若重登后位置重置，请回报以下诊断内容。"
+    texts.POSITION_NOT_SAVED = "[InfoTracker v2] 存档尚未保存悬浮窗位置，使用默认位置。若曾移动过窗口，请回报以下诊断内容。"
+    texts.POSITION_DATA_INVALID = "[InfoTracker v2] 存档中的悬浮窗坐标不完整或无效，已使用默认位置。请回报以下诊断内容。"
+    texts.POSITION_DATA_TRUNCATED = "[InfoTracker v2] 存档内容超过诊断输出上限，以上仅显示部分内容。"
 
     texts.CAT_DAILY = "每日任务"
     texts.CAT_VOCATION = "生活"
@@ -125,6 +129,10 @@ if isCN then
 else
     texts.EDITOR_TITLE = "Info Tracker - Setup"
     texts.LOADED = "[InfoTracker v2] Loaded"
+    texts.POSITION_DATA_MISSING = "[InfoTracker v2] No saved settings found; using default position. This is normal on first use. If your position reset after login, report the diagnostic below."
+    texts.POSITION_NOT_SAVED = "[InfoTracker v2] No popout position was saved; using default position. If you previously moved the window, report the diagnostic below."
+    texts.POSITION_DATA_INVALID = "[InfoTracker v2] Saved popout coordinates are incomplete or invalid; using default position. Please report the diagnostic below."
+    texts.POSITION_DATA_TRUNCATED = "[InfoTracker v2] Saved data exceeds the diagnostic output limit; only part of the data is shown above."
 
     texts.CAT_DAILY = "Daily Quests"
     texts.CAT_VOCATION = "Vocation"
