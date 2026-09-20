@@ -7,9 +7,105 @@ local SAVE_KEY = "itv2_settings"
 local SAVE_VERSION = 2
 local COORD_SPACE_EFFECTIVE = "effective"
 local LEGACY_HEADER_HEIGHT = 26   -- 舊存檔（記本體位置）換算用
+local positionDiagnostic
+local DIAGNOSTIC_BYTES = 4320
+local DIAGNOSTIC_ENTRIES = 256
+local DIAGNOSTIC_DEPTH = 6
+
+local function PrefixLength(text, limit)
+    local length = math.min(limit, #text)
+    while length > 0 and length < #text and text:byte(length + 1) >= 128
+        and text:byte(length + 1) < 192 do
+        length = length - 1
+    end
+    -- 非 UTF-8 的異常資料也必須能前進，不能卡住載入。
+    return length > 0 and length or math.min(limit, #text)
+end
+
+-- 有上限的原始資料快照。位置優先；截短、循環及不支援的值均明確標記。
+local function DumpSaved(value)
+    local parts, seen, bytes, entries = {}, {}, 0, 0
+    local truncated = false
+    local function Emit(text)
+        local room = DIAGNOSTIC_BYTES - bytes
+        if #text > room then
+            text = text:sub(1, PrefixLength(text, room))
+            truncated = true
+        end
+        parts[#parts + 1] = text
+        bytes = bytes + #text
+    end
+    local function Scalar(item)
+        if type(item) == "string" then
+            if #item > DIAGNOSTIC_BYTES then
+                item = item:sub(1, PrefixLength(item, DIAGNOSTIC_BYTES))
+                truncated = true
+            end
+            -- 控制字元轉義，確保每段只有一行，且不執行物件的 __tostring。
+            return '"' .. item:gsub('[%z\1-\31\127\\"]', function(char)
+                return string.format('\\%03d', char:byte())
+            end) .. '"'
+        end
+        local kind = type(item)
+        if kind == "nil" or kind == "boolean" or kind == "number" then return tostring(item) end
+        return "<" .. kind .. ">"
+    end
+    local function Visit(item, depth)
+        if bytes >= DIAGNOSTIC_BYTES then truncated = true; return end
+        if type(item) ~= "table" then Emit(Scalar(item)); return end
+        if seen[item] then Emit("<cycle>"); return end
+        if depth >= DIAGNOSTIC_DEPTH then Emit("<depth-limit>"); truncated = true; return end
+        seen[item] = true
+        local keys = {}
+        for key in pairs(item) do
+            if #keys >= DIAGNOSTIC_ENTRIES then truncated = true; break end
+            if not (depth == 0 and key == "popout") then keys[#keys + 1] = key end
+        end
+        table.sort(keys, function(a, b) return Scalar(a) < Scalar(b) end)
+        if depth == 0 and rawget(item, "popout") ~= nil then table.insert(keys, 1, "popout") end
+        Emit("{")
+        for index, key in ipairs(keys) do
+            if entries >= DIAGNOSTIC_ENTRIES or bytes >= DIAGNOSTIC_BYTES then
+                truncated = true; break
+            end
+            entries = entries + 1
+            if index > 1 then Emit(",") end
+            Emit("[" .. Scalar(key) .. "]=")
+            Visit(rawget(item, key), depth + 1)
+        end
+        Emit("}")
+        seen[item] = nil
+    end
+    Visit(value, 0)
+    return table.concat(parts), truncated
+end
+
+local function Coordinate(value)
+    local number = tonumber(value)
+    if number == nil or number ~= number or number == math.huge or number == -math.huge then return nil end
+    return number
+end
 
 local S = {}
 ITV2.Settings = S
+
+-- 視窗初始化後才顯示，每次載入最多一次；保留快照而非可被後續操作改動的表格。
+function S.ReportPositionFallback()
+    local report = positionDiagnostic
+    positionDiagnostic = nil
+    if report == nil then return end
+    ITV2.Chat(ITV2.Text(report.reason))
+    local remaining, chunks = report.data, {}
+    while #remaining > 0 do
+        local length = PrefixLength(remaining, 180)
+        chunks[#chunks + 1] = remaining:sub(1, length)
+        remaining = remaining:sub(length + 1)
+    end
+    for index, chunk in ipairs(chunks) do
+        ITV2.Chat("[ITV2 position " .. index .. "/" .. #chunks .. "] " .. chunk)
+    end
+    if report.truncated then ITV2.Chat(ITV2.Text("POSITION_DATA_TRUNCATED")) end
+end
 
 -- 面板設定：存在 popout[key]，設定頁依此順序列出
 S.PANEL_SETTINGS = {
@@ -326,16 +422,19 @@ local function LoadPopout(popout)
         end
     end
 
-    S.popoutPosX = tonumber(popout.x)
-    S.popoutPosY = tonumber(popout.y)
+    S.popoutPosX = Coordinate(popout.x)
+    S.popoutPosY = Coordinate(popout.y)
     -- 舊存檔記的是本體左上角；現在記標題欄，往上移一個標題欄高度保持畫面位置不變
     if popout.anchor ~= "header" and S.popoutPosY ~= nil then
-        S.popoutPosY = S.popoutPosY - LEGACY_HEADER_HEIGHT * ITV2.GetUiScale()
+        S.popoutPosY = Coordinate(S.popoutPosY - LEGACY_HEADER_HEIGHT * ITV2.GetUiScale())
     end
 end
 
 function S.Load()
     local saved = ADDON:LoadData(SAVE_KEY)
+    local rawSaved = saved
+    positionDiagnostic = nil
+    S.popoutPosX, S.popoutPosY = nil, nil
     if type(saved) ~= "table" then
         saved = {}
     end
@@ -350,5 +449,16 @@ function S.Load()
 
     if type(saved.popout) == "table" then
         LoadPopout(saved.popout)
+    end
+    if S.popoutPosX == nil or S.popoutPosY == nil then
+        local data, truncated = DumpSaved(rawSaved)
+        local reason = "POSITION_DATA_INVALID"
+        if rawSaved == nil then
+            reason = "POSITION_DATA_MISSING"
+        elseif type(rawSaved) == "table" and (rawSaved.popout == nil
+            or (type(rawSaved.popout) == "table" and rawSaved.popout.x == nil and rawSaved.popout.y == nil)) then
+            reason = "POSITION_NOT_SAVED"
+        end
+        positionDiagnostic = {reason = reason, data = SAVE_KEY .. "=" .. data, truncated = truncated}
     end
 end
