@@ -26,8 +26,6 @@ ITV2.CATEGORIES = {
             { key = "WONDERLAND", ids = { 9000333 } },
             { key = "HALCY", ids = { 9000225, 9320 } },
             { key = "GARDENBOSS", ids = { 10056 } },
-            { key = "YNYSWORD", ids = { 9965 } },
-            { key = "CINDERSWORD", ids = { 9960 } },
             { key = "IPNYSH_DAILY", ids = { 10558, 10559 } },
             { key = "TREE_MAMMOTH", ids = { 9317, 9318 } },
         },
@@ -60,6 +58,8 @@ ITV2.CATEGORIES = {
         label = "CAT_OTHERS",
         kind = "quest",
         items = {
+            { key = "YNYSWORD", ids = { 9965 } },
+            { key = "CINDERSWORD", ids = { 9960 } },
             { key = "WABOSS", ids = { 9000198 } },
             { key = "LUSCA", ids = { 5765 } },
             { key = "ABYSSAL", max = 2, ids = { 6791, 6973, 6974, 6975 } },
