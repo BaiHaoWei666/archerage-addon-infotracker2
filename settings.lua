@@ -90,11 +90,21 @@ local S = {}
 ITV2.Settings = S
 
 -- 視窗初始化後才顯示，每次載入最多一次；保留快照而非可被後續操作改動的表格。
-function S.ReportPositionFallback()
+function S.ReportLoadedPosition(actualX, actualY)
     local report = positionDiagnostic
     positionDiagnostic = nil
     if report == nil then return end
+    if report.reason == nil then
+        actualX, actualY = Coordinate(actualX), Coordinate(actualY)
+        -- GetEffectiveOffset 與存檔皆為有效座標，容許 1 像素的取整誤差。
+        if actualX ~= nil and actualY ~= nil
+            and math.abs(actualX - report.x) <= 1 and math.abs(actualY - report.y) <= 1 then return end
+        report.reason = "POSITION_APPLY_MISMATCH"
+        report.details = string.format("[ITV2 position] expected=(%s,%s) actual=(%s,%s) uiScale=%s",
+            tostring(report.x), tostring(report.y), tostring(actualX), tostring(actualY), tostring(ITV2.GetUiScale()))
+    end
     ITV2.Chat(ITV2.Text(report.reason))
+    if report.details then ITV2.Chat(report.details) end
     local remaining, chunks = report.data, {}
     while #remaining > 0 do
         local length = PrefixLength(remaining, 180)
@@ -450,8 +460,10 @@ function S.Load()
     if type(saved.popout) == "table" then
         LoadPopout(saved.popout)
     end
+    local data, truncated = DumpSaved(rawSaved)
+    positionDiagnostic = {data = SAVE_KEY .. "=" .. data, truncated = truncated,
+        x = S.popoutPosX, y = S.popoutPosY}
     if S.popoutPosX == nil or S.popoutPosY == nil then
-        local data, truncated = DumpSaved(rawSaved)
         local reason = "POSITION_DATA_INVALID"
         if rawSaved == nil then
             reason = "POSITION_DATA_MISSING"
@@ -459,6 +471,6 @@ function S.Load()
             or (type(rawSaved.popout) == "table" and rawSaved.popout.x == nil and rawSaved.popout.y == nil)) then
             reason = "POSITION_NOT_SAVED"
         end
-        positionDiagnostic = {reason = reason, data = SAVE_KEY .. "=" .. data, truncated = truncated}
+        positionDiagnostic.reason = reason
     end
 end
