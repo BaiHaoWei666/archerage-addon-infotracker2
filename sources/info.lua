@@ -39,7 +39,12 @@ end
 local function IsAssignmentUnlocked(kind)
     local total = 0
     for index = 1, 7 do
-        local info = X2Achievement:GetTodayAssignmentInfo(kind, index)
+        local info
+        if kind == TADT_TODAY then
+            info = ITV2.TrackingData.GetAssignment(index)
+        else
+            info = X2Achievement:GetTodayAssignmentInfo(kind, index)
+        end
         if info ~= nil then
             if info.status == 1 then
                 total = total + 1

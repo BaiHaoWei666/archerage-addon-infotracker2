@@ -24,7 +24,6 @@ local EXPANDED_GAP = 2       -- 展開的細項下方留白
 local ARROW_SIZE = 18
 local EDIT_SIZE = 22
 local BG_COLOR = { 0, 0, 0 } -- 本體與標題欄共用；不透明度來自面板設定 bgAlpha
-local REFRESH_MS = 5000
 local HOVER_LINGER_MS = 400
 
 -- 由面板設定推算的版面尺寸
@@ -474,10 +473,19 @@ function Popout.Refresh(revealKey, dataOnly)
 end
 
 function Popout.RefreshData(changed)
-    if changed[CATEGORIES[S.popoutPage].key] then Popout.Refresh(nil, true) end
+    if body:IsVisible() and changed[CATEGORIES[S.popoutPage].key] then Popout.Refresh(nil, true) end
 end
 
-local elapsed = 0
+function Popout.GetDataDemand()
+    if not body:IsVisible() then return end
+    local cat = CATEGORIES[S.popoutPage]
+    local keys = {}
+    for _, key in ipairs(S.orderByCat[cat.key]) do
+        if S.IsTracked(key) then keys[#keys + 1] = key end
+    end
+    return cat.key, keys
+end
+
 local hoverElapsed = 0
 local HOVER_CHECK_MS = 75
 body:SetHandler("OnUpdate", function(self, dt)
@@ -495,15 +503,6 @@ body:SetHandler("OnUpdate", function(self, dt)
             if leftFor >= HOVER_LINGER_MS then SetHovered(false) end
         end
     end
-
-    local kind = CATEGORIES[S.popoutPage].kind
-    if kind == "quest" or kind == "assignment" then return end
-    elapsed = elapsed + dt
-    if elapsed < REFRESH_MS then
-        return
-    end
-    elapsed = 0
-    Popout.Refresh(nil, true)
 end)
 
 -- 回傳標題欄的有效座標，與位置存檔使用相同座標系。

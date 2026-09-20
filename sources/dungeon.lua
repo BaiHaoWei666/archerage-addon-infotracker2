@@ -12,15 +12,25 @@ local CANNOT_SOLO = { [24] = true, [43] = true, [52] = true, [53] = true, [66] =
 
 local squadCooldownUntil = 0
 
-local function GetDungeonList(ctx)
-    if ctx ~= nil and ctx.dungeonList ~= nil then
-        return ctx.dungeonList
-    end
-    local list = X2BattleField:GetInstanceListByKind(DUNGEON_KIND_ID) or {}
-    if ctx ~= nil then
-        ctx.dungeonList = list
-    end
-    return list
+-- 建隊與確認視窗使用即時資料；顯示次數才使用共用快取。
+local function GetDungeonList()
+    return X2BattleField:GetInstanceListByKind(DUNGEON_KIND_ID) or {}
+end
+
+local function ReadDungeon(item)
+    return ITV2.TrackingData.ReadPolled("dungeon", item.key, function()
+        local list = ITV2.TrackingData.ReadPolled("dungeon", "list", function()
+            return X2BattleField:GetInstanceListByKind(DUNGEON_KIND_ID) or {}
+        end, 5000)
+        local instance = list[item.index]
+        if not instance then return nil end
+        local info = X2BattleField:GetDetailInstanceInfo(instance.type)
+        return {
+            name = X2BattleField:GetInstanceName(instance.type) or "?",
+            entered = info and info.enterCount or 0,
+            max = info and info.maxEnterCount,
+        }
+    end, 5000)
 end
 
 local function CreateSquad(instance, inviteParty)
@@ -72,33 +82,30 @@ local function CreateSquad(instance, inviteParty)
 end
 
 ITV2.SOURCES.dungeon = {
-    View = function(item, ctx)
-        local instance = GetDungeonList(ctx)[item.index]
-        if instance == nil then
+    View = function(item)
+        local data = ReadDungeon(item)
+        if data == nil then
             return { text = string.format(T("DUNGEON_FALLBACK"), item.index), status = "neutral" }
         end
-        local name = X2BattleField:GetInstanceName(instance.type) or "?"
-        local info = X2BattleField:GetDetailInstanceInfo(instance.type)
-        if info == nil or info.maxEnterCount == nil then
-            return { text = name, status = "neutral" }
+        if data.max == nil then
+            return { text = data.name, status = "neutral" }
         end
-        local entered = info.enterCount or 0
         return {
-            text = string.format("%s [%d/%d]", name, entered, info.maxEnterCount),
-            status = Util.ProgressStatus(entered, info.maxEnterCount),
+            text = string.format("%s [%d/%d]", data.name, data.entered, data.max),
+            status = Util.ProgressStatus(data.entered, data.max),
         }
     end,
 
     -- 詢問窗顯示用的副本名稱
     GetName = function(item)
-        local instance = GetDungeonList(nil)[item.index]
+        local instance = GetDungeonList()[item.index]
         local name = instance and X2BattleField:GetInstanceName(instance.type)
         return name or string.format(T("DUNGEON_FALLBACK"), item.index)
     end,
 
     -- options.inviteParty：建立戰隊時邀請隊伍成員
     Activate = function(item, options)
-        local instance = GetDungeonList(nil)[item.index]
+        local instance = GetDungeonList()[item.index]
         if instance == nil or instance.type == nil then
             Chat(T("INVALID_INSTANCE"))
             return
