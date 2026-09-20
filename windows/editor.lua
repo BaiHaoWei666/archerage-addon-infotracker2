@@ -73,12 +73,14 @@ end
 -- ============================================
 local PANEL_TAB = #CATEGORIES + 1
 local HELP_TAB = #CATEGORIES + 2
+local QUERY_TAB = #CATEGORIES + 3
 local CATEGORY_TABS_TOP = TABS_TOP + TAB_HEIGHT + 16
 local divider = window:CreateColorDrawable(0.6, 0.7, 0.8, 0.35, "background")
 divider:SetExtent(WIDTH - PADDING * 2, 1)
 divider:AddAnchor("TOPLEFT", window, PADDING, TABS_TOP + TAB_HEIGHT + 7)
 
 local tabButtons = {}
+
 do
     -- 目前頁籤以停用（按下）狀態標示，文字維持一般顏色不變灰
     local textColor = { 1, 1, 1, 1 }
@@ -95,6 +97,7 @@ do
     end
     labels[PANEL_TAB] = "CAT_PANEL"
     labels[HELP_TAB] = "CAT_HELP"
+    labels[QUERY_TAB] = "QUERY_QUEST_IDS"
 
     for index, label in ipairs(labels) do
         local tab = UI.CreateTextButton(window, "itv2Tab" .. index, T(label), TAB_WIDTH, TAB_HEIGHT)
@@ -116,6 +119,7 @@ local function LayoutTabs()
     end
     PlaceTab(PANEL_TAB, 0, TABS_TOP)
     PlaceTab(HELP_TAB, 1, TABS_TOP)
+    PlaceTab(QUERY_TAB, 2, TABS_TOP)
     for slot, index in ipairs(S.pageOrder) do
         PlaceTab(index, (slot - 1) % TABS_PER_ROW,
             CATEGORY_TABS_TOP + math.floor((slot - 1) / TABS_PER_ROW) * (TAB_HEIGHT + TAB_GAP))
@@ -467,6 +471,56 @@ local function LayoutHelpPage()
     return y
 end
 
+-- 查詢頁只在點擊時讀取任務日誌；文字採純文字片段比對。
+local queryHint = UI.CreateCaption(listParent, "itv2QuestIdHint", LIST_WIDTH, ROW_HEIGHT, 13, T("QUERY_QUEST_IDS_HINT"))
+local queryInput = listParent:CreateChildWidgetByType(UOT_X2_EDITBOX, "itv2QuestIdInput", 0, true)
+queryInput:SetExtent(LIST_WIDTH - 100, 28)
+queryInput:SetInset(5, 5, 5, 5)
+queryInput:EnableFocus(true)
+queryInput:UseSelectAllWhenFocused(true)
+queryInput.style:SetAlign(ALIGN_LEFT)
+queryInput.style:SetColorByKey("title")
+queryInput:SetText("")
+local queryBackground = queryInput:CreateDrawable("ui/common/default.dds", "editbox_df", "background")
+queryBackground:AddAnchor("TOPLEFT", queryInput, 0, 0)
+queryBackground:AddAnchor("BOTTOMRIGHT", queryInput, 0, 0)
+local queryButton = UI.CreateTextButton(listParent, "itv2QuestIdButton", T("QUERY_QUEST_IDS"), 90, 28)
+local queryStatus = UI.CreateCaption(listParent, "itv2QuestIdStatus", LIST_WIDTH, ROW_HEIGHT, 13, "")
+UI.OnLeftClick(queryButton, function()
+    local keyword = (queryInput:GetText() or ""):match("^%s*(.-)%s*$")
+    if keyword == "" then
+        queryStatus:SetText(T("QUERY_QUEST_IDS_HINT"))
+        return
+    end
+    local count = X2Quest:GetActiveQuestListCount() or 0
+    local found, seen = 0, {}
+    for index = 1, count do
+        local id = X2Quest:GetActiveQuestType(index)
+        local title = id and X2Quest:GetQuestContextMainTitle(id)
+        if title and not seen[id] and string.find(string.lower(title), string.lower(keyword), 1, true) then
+            seen[id] = true
+            found = found + 1
+            ITV2.Chat(string.format("[Quest ID] %s = %s", title, tostring(id)))
+        end
+    end
+    local result = string.format(T("QUERY_QUEST_IDS_RESULT"), found, count)
+    queryStatus:SetText(result)
+    ITV2.Chat(result)
+end)
+local function HideQueryPage()
+    queryHint:Show(false)
+    queryInput:Show(false)
+    queryButton:Show(false)
+    queryStatus:Show(false)
+end
+local function LayoutQueryPage()
+    area:Place(queryHint, 0, 0, ROW_HEIGHT)
+    area:Place(queryInput, 0, ROW_HEIGHT + 8, 28)
+    area:Place(queryButton, LIST_WIDTH - 90, ROW_HEIGHT + 8, 28)
+    area:Place(queryStatus, 0, ROW_HEIGHT + 48, ROW_HEIGHT)
+    return ROW_HEIGHT * 2 + 48
+end
+
 -- ============================================
 -- 重新整理與操作
 -- ============================================
@@ -477,7 +531,8 @@ function Editor.Refresh(dataOnly)
 
     local isPanel = activeTab == PANEL_TAB
     local isHelp = activeTab == HELP_TAB
-    local isList = not isPanel and not isHelp
+    local isQuery = activeTab == QUERY_TAB
+    local isList = not isPanel and not isHelp and not isQuery
     if dataOnly and not isList then return end
     local entries, signature
     if isList then
@@ -501,9 +556,14 @@ function Editor.Refresh(dataOnly)
     area:SetView(PADDING, contentTop, LIST_WIDTH, HEIGHT - contentTop - PADDING)
     local function Layout()
         HideHelpPage()
+        HideQueryPage()
         if not isList then
             HideItemRows(1)
             HideSubRows(1)
+        end
+        if isQuery then
+            HidePanelPage()
+            return LayoutQueryPage()
         end
         if isHelp then
             HidePanelPage()
