@@ -55,6 +55,7 @@ local function AddIncome(field, amount)
     end
     income[field] = income[field] + amount
     SaveIncome()
+    ITV2.TrackingData.Invalidate("income")
 end
 
 UIParent:SetEventHandler(UIEVENT_TYPE.PLAYER_MONEY, function(amount)
@@ -83,10 +84,13 @@ end
 
 ITV2.SOURCES.income = {
     View = function(item)
-        if not EnsureIncome() then
+        local snapshot = ITV2.TrackingData.ReadPolled("income", "*", function()
+            if EnsureIncome() then return income end
+        end, 1000)
+        if not snapshot then
             return { text = T(item.key) .. " -", status = "neutral" }
         end
-        local value = income[item.field]
+        local value = snapshot[item.field]
         local valueText = item.field == "gold" and FormatGold(value) or tostring(value)
         return { text = T(item.key) .. " " .. valueText, status = "neutral" }
     end,
@@ -97,6 +101,7 @@ ITV2.SOURCES.income = {
         end
         income = EmptyIncome(TodayString())
         SaveIncome()
+        ITV2.TrackingData.Invalidate("income")
         ITV2.Chat(T("INCOME_RESET_DONE"))
     end,
 }

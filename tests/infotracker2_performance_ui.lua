@@ -211,3 +211,31 @@ queries=queryCount
 ITV2.Editor.RefreshData({daily=true})
 assert(queryCount==queries,'隱藏設定窗仍讀資料')
 print('PASS: 兩視窗閒置兩分鐘零任務刷新、無關頁與隱藏頁零讀取、懸浮窗狀態更新零重排')
+
+-- 真實視窗僅宣告需求；所有來源都不再由視窗計時器自行刷新。
+assert(ITV2.Editor.GetDataDemand()==nil)
+widgets.itv2EditorWindow:Show(true)
+local category, keys=ITV2.Editor.GetDataDemand()
+assert(category=='daily' and #keys==30)
+tracked['1']=false
+category,keys=ITV2.Popout.GetDataDemand()
+local wanted={}
+for _, key in ipairs(keys) do wanted[key]=true end
+assert(category=='daily' and not wanted['1'] and wanted['2'])
+for _, kind in ipairs({'info','dungeon','income'}) do
+    ITV2.CATEGORIES[1].kind=kind
+    queries=queryCount
+    for i=1,10 do
+        Frame('itv2EditorWindow',1000)
+        Frame('itv2PopoutWindow',1000)
+    end
+    assert(queryCount==queries,'視窗仍自行輪詢 '..kind)
+end
+widgets.itv2PopoutWindow:Show(false)
+assert(ITV2.Popout.GetDataDemand()==nil)
+queries=queryCount
+ITV2.Popout.RefreshData({daily=true})
+assert(queryCount==queries,'隱藏懸浮窗仍刷新')
+Click('itv2Tab2')
+assert(ITV2.Editor.GetDataDemand()==nil,'設定頁仍宣告資料需求')
+print('PASS: 所有來源移除視窗輪詢、隱藏／設定頁零需求、懸浮窗只要求已追蹤項目')

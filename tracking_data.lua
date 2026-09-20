@@ -1,10 +1,10 @@
--- 共用資料層：任務靠事件更新，挑戰依失效格子讀取，角色資訊共用輪詢快取。
+-- 共用資料層：集中管理事件、快取與必要輪詢；視窗只宣告需求並接收變更。
 local Data = {}
 ITV2.TrackingData = Data
 local quests, questCategories = {}, {}
 local assignments, dirtySlots = {}, {}
 local allAssignmentsDirty = true
-local infoCache = {}
+local polled = {}
 local pending = {}
 local scheduled = false
 
@@ -19,6 +19,77 @@ local function Notify(category)
         if ITV2.Editor then ITV2.Editor.RefreshData(changed) end
         if ITV2.Popout then ITV2.Popout.RefreshData(changed) end
     end)
+end
+
+local function Copy(value)
+    if type(value) ~= "table" then return value end
+    local out = {}
+    for key, field in pairs(value) do out[key] = Copy(field) end
+    return out
+end
+
+local function Equal(a, b)
+    if type(a) ~= type(b) then return false end
+    if type(a) ~= "table" then return a == b end
+    for key, value in pairs(a) do if not Equal(value, b[key]) then return false end end
+    for key in pairs(b) do if a[key] == nil then return false end end
+    return true
+end
+
+local function ReadEntry(entry)
+    local value = Copy(entry.read())
+    local changed = not entry.loaded or not Equal(entry.value, value)
+    entry.value, entry.loaded, entry.time = value, true, ITV2.NowMs()
+    return changed
+end
+
+-- nil 與 false 也快取；複製快照避免遊戲重用 table 造成變更漏判。
+function Data.ReadPolled(category, key, read, interval)
+    polled[category] = polled[category] or {}
+    local entry = polled[category][key]
+    if not entry then
+        entry = { read = read, interval = interval }
+        polled[category][key] = entry
+    end
+    if not entry.loaded or ITV2.NowMs() - entry.time >= entry.interval then
+        local wasLoaded = entry.loaded
+        local changed = ReadEntry(entry)
+        -- 初次顯示已在刷新；失效來源也已有通知，避免通知回圈多刷一幀。
+        if wasLoaded and changed then Notify(category) end
+    end
+    return entry.value
+end
+
+function Data.Invalidate(category, key)
+    for entryKey, entry in pairs(polled[category] or {}) do
+        if key == nil or key == entryKey then entry.loaded = false end
+    end
+    Notify(category)
+end
+
+-- 每個視窗回傳目前分類與需要的項目；合併後每個來源最多讀一次。
+function Data.Poll()
+    local wanted = {}
+    for _, name in ipairs({ "Editor", "Popout" }) do
+        local window = ITV2[name]
+        if window and window.GetDataDemand then
+            local category, keys = window.GetDataDemand()
+            if category then
+                wanted[category] = wanted[category] or {}
+                for _, key in ipairs(keys) do wanted[category][key] = true end
+            end
+        end
+    end
+    for category, keys in pairs(wanted) do
+        for key, entry in pairs(polled[category] or {}) do
+            if (keys[key] or (key == "*" and next(keys)))
+                and (not entry.loaded or ITV2.NowMs() - entry.time >= entry.interval) then
+                -- 個別 API 失敗不阻斷其他來源，也不停止下次重試。
+                local ok, changed = pcall(ReadEntry, entry)
+                if ok and changed then Notify(category) end
+            end
+        end
+    end
 end
 
 local function ReadSlot(slot)
@@ -58,12 +129,7 @@ function Data.GetQuest(id)
 end
 
 function Data.ReadInfo(key, read)
-    local now = ITV2.NowMs()
-    local cached = infoCache[key]
-    if cached and now - cached.time < 1000 then return cached.value end
-    local value = read()
-    infoCache[key] = { time = now, value = value }
-    return value
+    return Data.ReadPolled("info", key, read, 1000)
 end
 
 function Data.Initialize()
@@ -85,7 +151,9 @@ function Data.Initialize()
     end
     ReadAllAssignments()
     quests, questCategories = nextQuests, nextCategories
-    infoCache = {}
+    for _, entries in pairs(polled) do
+        for _, entry in pairs(entries) do entry.loaded = false end
+    end
 end
 
 function Data.QuestEvent(id, action)
@@ -121,6 +189,7 @@ function Data.QuestEvent(id, action)
             dirtySlots[slot] = true
         end
         Notify("challenge")
+        Data.Invalidate("info", "INFO_DAILY")
     end
 end
 
@@ -128,9 +197,15 @@ function Data.AssignmentEvent(value)
     local slot = type(value) == "table" and FindSlot(tonumber(value.questType)) or nil
     if slot then dirtySlots[slot] = true else allAssignmentsDirty = true end
     Notify("challenge")
+    Data.Invalidate("info", "INFO_DAILY")
 end
 
 function Data.RegisterEvents()
+    local function PollNext()
+        Data.Poll()
+        ITV2.Schedule("tracking-poll", 1000, PollNext)
+    end
+    ITV2.Schedule("tracking-poll", 1000, PollNext)
     UIParent:SetEventHandler(UIEVENT_TYPE.QUEST_CONTEXT_UPDATED, Data.QuestEvent)
     UIParent:SetEventHandler(UIEVENT_TYPE.UPDATE_TODAY_ASSIGNMENT, Data.AssignmentEvent)
     UIParent:SetEventHandler(UIEVENT_TYPE.START_TODAY_ASSIGNMENT, function()
@@ -141,7 +216,7 @@ function Data.RegisterEvents()
         ITV2.Schedule("tracking-world", 0, function()
             Data.Initialize()
             for _, cat in ipairs(ITV2.CATEGORIES) do
-                if cat.kind == "quest" or cat.kind == "assignment" then Notify(cat.key) end
+                Notify(cat.key)
             end
         end)
     end)

@@ -16,7 +16,6 @@ local SHOW_DUMP_BUTTON = false
 local WIDTH = 430
 local HEIGHT = 560
 local PADDING = 20
-local REFRESH_MS = 1000
 
 local ITEM_FONT_SIZE = 14
 local SUB_FONT_SIZE = ITEM_FONT_SIZE - 1
@@ -586,6 +585,13 @@ function Editor.RefreshData(changed)
     if cat and changed[cat.key] then Editor.Refresh(true) end
 end
 
+function Editor.GetDataDemand()
+    local cat = CATEGORIES[activeTab]
+    if window:IsVisible() and cat then
+        return cat.key, S.orderByCat[cat.key]
+    end
+end
+
 local function SelectTab(index)
     if activeTab ~= index then
         activeTab = index
@@ -627,7 +633,6 @@ end)
 
 UI.OnLeftClick(resetIncomeButton, function()
     SOURCES.income.Reset()
-    ITV2.RefreshAll()
 end)
 
 UI.OnLeftClick(dumpButton, function()
@@ -637,17 +642,8 @@ UI.OnLeftClick(dumpButton, function()
     end
 end)
 
-local elapsed = 0
 window:SetHandler("OnUpdate", function(self, dt)
-    if not self:IsVisible() then return end
-    local cat = CATEGORIES[activeTab]
-    if not refreshPending and (cat == nil or cat.kind == "quest" or cat.kind == "assignment") then return end
-    elapsed = elapsed + dt
-    if elapsed < REFRESH_MS and not refreshPending then
-        return
-    end
-    elapsed = 0
-    local dataOnly = not refreshPending
+    if not self:IsVisible() or not refreshPending then return end
     refreshPending = false
-    Editor.Refresh(dataOnly)
+    Editor.Refresh()
 end)
