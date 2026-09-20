@@ -28,6 +28,7 @@ ITV2.CATEGORIES = {
             { key = "GARDENBOSS", ids = { 10056 } },
             { key = "IPNYSH_DAILY", ids = { 10558, 10559 } },
             { key = "TREE_MAMMOTH", ids = { 9317, 9318 } },
+            { key = "TERRITORY_HEEDMAR", ids = { 9380, 9381, 10153 } },
         },
     },
     {

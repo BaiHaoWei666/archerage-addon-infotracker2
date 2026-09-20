@@ -57,6 +57,7 @@ if isCN then
     texts.CINDERSWORD = "净化(西)"
     texts.IPNYSH_DAILY = "伊福尼尔"
     texts.TREE_MAMMOTH = "大象+大树"
+    texts.TERRITORY_HEEDMAR = "领地(安息)"
 
     -- 每日挑戰
     texts.CAT_CHALLENGE = "每日挑战"
@@ -183,6 +184,7 @@ else
     texts.CINDERSWORD = "Cinder"
     texts.IPNYSH_DAILY = "Ipnysh"
     texts.TREE_MAMMOTH = "Mammoth + Tree"
+    texts.TERRITORY_HEEDMAR = "Territory (Heedmar)"
 
     -- Daily challenges
     texts.CAT_CHALLENGE = "Challenges"
