@@ -5,16 +5,14 @@ ADDON:ImportAPI(API_TYPE.QUEST.id)
 local T = ITV2.Text
 local Util = ITV2.SourceUtil
 
-local function IsCompleted(questId, ctx)
-    ctx.completed = ctx.completed or {}
-    if ctx.completed[questId] == nil then
-        ctx.completed[questId] = X2Quest:IsCompleted(questId) == true
-    end
-    return ctx.completed[questId]
+local function IsCompleted(questId)
+    local state = ITV2.TrackingData.GetQuest(questId)
+    return state and state.completed == true
 end
 
-local function IsActive(questId, ctx)
-    return Util.GetJournalIndexMap(ctx)[questId] ~= nil
+local function IsActive(questId)
+    local state = ITV2.TrackingData.GetQuest(questId)
+    return state and state.active == true
 end
 
 -- 名稱不同但要當成同一行的任務（quest_data.lua 裡項目的 merge 設定，名稱必須完全相同）

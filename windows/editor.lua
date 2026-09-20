@@ -581,6 +581,11 @@ function Editor.Refresh(dataOnly)
     end
 end
 
+function Editor.RefreshData(changed)
+    local cat = CATEGORIES[activeTab]
+    if cat and changed[cat.key] then Editor.Refresh(true) end
+end
+
 local function SelectTab(index)
     if activeTab ~= index then
         activeTab = index
@@ -635,6 +640,8 @@ end)
 local elapsed = 0
 window:SetHandler("OnUpdate", function(self, dt)
     if not self:IsVisible() then return end
+    local cat = CATEGORIES[activeTab]
+    if not refreshPending and (cat == nil or cat.kind == "quest" or cat.kind == "assignment") then return end
     elapsed = elapsed + dt
     if elapsed < REFRESH_MS and not refreshPending then
         return

@@ -64,7 +64,7 @@ local INFO_CHECKS = {
 ITV2.SOURCES.info = {
     View = function(item)
         local def = INFO_CHECKS[item.key]
-        local good = def.check()
+        local good = ITV2.TrackingData.ReadInfo(item.key, def.check)
         return {
             text = string.format("%s: %s", T(item.key), T(good and def.ok or def.bad)),
             status = good and "complete" or "notStarted",

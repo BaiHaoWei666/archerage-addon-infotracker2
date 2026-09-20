@@ -8,6 +8,7 @@ core.lua
 locale.lua
 quest_data.lua
 specialty_data.lua
+tracking_data.lua
 
 sources/common.lua
 sources/quest.lua

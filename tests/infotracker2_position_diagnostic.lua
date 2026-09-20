@@ -21,6 +21,7 @@ local function Check(saved, expected, reason, truncated, beforeReport, actual)
     -- 沿用正式初始化順序，但不重讀存檔，以驗證快照不受後續操作影響。
     local load = ITV2.Settings.Load
     ITV2.Settings.Load = function() end
+    ITV2.TrackingData = { Initialize = function() end, RegisterEvents = function() end }
     dofile('main.lua')
     ITV2.Settings.Load = load
     assert(initialized and messages[#messages] == 'LOADED', '診斷阻斷初始化')
