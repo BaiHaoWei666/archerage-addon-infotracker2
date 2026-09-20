@@ -2,10 +2,18 @@
   "schemaVersion": 1,
   "name": "infotracker2",
   "displayName": "InfoTracker v2",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "category": "資訊",
   "description": "資訊追蹤：任務、每日挑戰、角色資訊、今日淨收入、副本",
   "changelog": [
+    {
+      "version": "1.0.4",
+      "date": "2026-09-20",
+      "notes": [
+        "永久保留懸浮窗位置診斷，區分未讀到存檔、尚未保存位置及無效座標，於本機聊天框分段輸出存檔快照",
+        "位置診斷優先顯示座標資料，限制輸出長度與巢狀深度，避免異常資料影響載入；保留既有設定與舊版座標相容性"
+      ]
+    },
     {
       "version": "1.0.3",
       "date": "2026-09-19",
