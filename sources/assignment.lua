@@ -23,7 +23,7 @@ local function GetInfo(item, ctx)
     ctx.assignmentInfo = ctx.assignmentInfo or {}
     local cached = ctx.assignmentInfo[item.slot]
     if cached ~= nil then return cached or nil end
-    local info = X2Achievement:GetTodayAssignmentInfo(TADT_TODAY, item.slot)
+    local info = ITV2.TrackingData.GetAssignment(item.slot)
     ctx.assignmentInfo[item.slot] = type(info) == "table" and info or false
     return ctx.assignmentInfo[item.slot] or nil
 end

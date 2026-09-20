@@ -37,6 +37,15 @@ ArcheRage 的任務與角色資訊追蹤插件，提供分類懸浮窗、追蹤�
 
 ## 開發與測試
 
+### 資料更新方式
+
+- 任務與每日挑戰不做每秒／每五秒輪詢。載入及重新進入世界時掃一次已接任務日誌、讀取配置任務的完成狀態與七格挑戰，建立兩個視窗共用的記憶體快取。
+- `QUEST_CONTEXT_UPDATED(id, action)` 的 `started`、`updated`、`completed`、`dropped` 更新單一任務狀態；`reset` 僅清除該 ID 的完成狀態，保留仍接取中的狀態，不清空其他任務或觸發七格全讀。
+- 已知挑戰 ID 的通知只讓對應格失效；更換時的 `dropped`、`START_TODAY_ASSIGNMENT`，以及無法定位格子的 `UPDATE_TODAY_ASSIGNMENT`，標記七格待重讀。未顯示挑戰頁時延後至切入才讀取；連續通知於下一幀合併刷新，兩視窗共用結果。
+- 角色資訊保留原有刷新頻率（設定窗一秒、懸浮窗五秒），每項讀取結果共用一秒快取。收入與副本維持原本資料更新方式。未顯示的分類不重畫；內容未變不寫文字，結構未變不重排。滑鼠懸停與延遲操作仍使用 UI 計時。
+
+2026-09-20 使用者實機截圖已確認一般任務的接取、推進、交付、放棄，以及進場時單一任務的 `reset`；更換挑戰觀察到舊 ID `dropped`、新 ID `started` 與 `START_TODAY_ASSIGNMENT`。本版依約假設跨日也會發送單 ID `reset`，沒有跨日補查輪詢；跨日／每週通知是否完整，以及正式事件驅動版本的實機顯示仍待驗證。持續出現的 `CLEAR_COMPLETED_QUEST_INFO`／`UPDATE_COMPLETED_QUEST_INFO` 不作為重置或刷新依據。臨時事件輸出已移除。
+
 repo 根目錄就是插件目錄，可放在管理器的 `addons/infotracker2/`，並讓遊戲 `Addon/infotracker2` Junction 指向它。這是獨立 Git repo，提交與推送均在本目錄執行。
 
 ```powershell

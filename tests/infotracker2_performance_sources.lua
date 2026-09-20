@@ -15,6 +15,11 @@ X2Quest = {
     GetQuestContextMainTitle = function(_, id) return tostring(id) end,
 }
 dofile('sources/common.lua')
+ITV2.CATEGORIES={{key='daily',kind='quest',items={{key='test',ids={1,2}}}}}
+TADT_TODAY=1
+X2Achievement={GetTodayAssignmentInfo=function() return nil end}
+dofile('tracking_data.lua')
+ITV2.TrackingData.Initialize()
 dofile('sources/quest.lua')
 local quest = ITV2.SOURCES.quest
 local item = {key='test', ids={1,2}}
@@ -23,8 +28,10 @@ quest.View(item, ctx)
 quest.Children(item, ctx)
 assert(questCalls == 2 and journalCalls == 1, '主項與細項未共用狀態快取')
 complete = true
-assert(quest.View(item, {}).status == 'complete' and questCalls == 4, '下次刷新仍使用舊狀態')
-print('PASS: 主項＋細項的狀態 API 從 4 次降為 2 次，下一次刷新仍取得新狀態')
+assert(quest.View(item, {}).status ~= 'complete' and questCalls == 2, '無事件仍重查')
+ITV2.TrackingData.QuestEvent(1,'completed'); ITV2.TrackingData.QuestEvent(2,'completed')
+assert(quest.View(item, {}).status == 'complete' and questCalls == 2, '事件未更新共用快取')
+print('PASS: 主項與細項跨刷新共用快取、無事件零查詢、完成事件直接更新')
 
 local infoCalls, craftCalls = 0, 0
 local hasInfo = true
@@ -37,15 +44,18 @@ ITV2.Specialty = {
     GetCraft=function() craftCalls=craftCalls+1; return 10 end,
     GetMaterials=function() return {} end,
 }
+ITV2.TrackingData.AssignmentEvent()
 dofile('sources/assignment.lua')
 local assignment=ITV2.SOURCES.assignment
 item={slot=1};ctx={}
 assignment.View(item,ctx);assignment.CanExpand(item,ctx);assignment.Children(item,ctx)
-assert(infoCalls==1 and craftCalls==1,'同格挑戰資訊與配方未共用')
+assert(infoCalls==7 and craftCalls==1,'同格挑戰資訊與配方未共用')
 hasInfo=false;ctx={}
+ITV2.TrackingData.AssignmentEvent()
 assignment.View(item,ctx);assignment.CanExpand(item,ctx);assignment.Children(item,ctx)
-assert(infoCalls==2,'查無資訊未快取')
+assert(infoCalls==14,'查無資訊未快取')
 hasInfo=true
+ITV2.TrackingData.AssignmentEvent()
 assert(assignment.CanExpand(item,{}),'資料恢復後沒有重試')
 print('PASS: 每格挑戰只查詢一次，包含空結果與稍後恢復')
 

@@ -52,6 +52,7 @@ for _,scale in ipairs({1,1.25,1.5}) do
             ITV2.SOURCES[cat.kind]={View=function(item)return {text=item.key,status='neutral'}end}
         end
         dofile('items.lua');dofile('settings.lua');dofile('windows/widgets.lua');dofile('windows/popout.lua')
+        ITV2.TrackingData={Initialize=function()end,RegisterEvents=function()end}
         dofile('main.lua')
         local header=widgets.itv2PopoutHeader
         local function CheckPosition(x,y)

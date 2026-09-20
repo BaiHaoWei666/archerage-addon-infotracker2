@@ -17,6 +17,7 @@ local function Setup(active, productName, questTitle)
     }
     X2Achievement = { GetTodayAssignmentInfo = function() return {questType=123,status=active and 2 or 3} end }
     ITV2 = { SOURCES={}, SPECIALTY_CRAFTS={10}, AUCTION_EXCLUDED_ITEMS={}, Text=function(key) return key end }
+    dofile('tracking_data.lua')
     dofile('sources/common.lua')
     dofile('sources/specialty.lua')
     dofile('sources/assignment.lua')

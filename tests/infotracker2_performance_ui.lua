@@ -67,10 +67,12 @@ ITV2.Popout.Init()
 ITV2.Editor.Toggle(1)
 local anchors,texts,queries=calls.RemoveAllAnchors,calls.SetText,queryCount
 Frame('itv2EditorWindow',1000)
-assert(queryCount==queries+30,'設定窗未刷新資料')
+assert(queryCount==queries,'任務頁仍定時查詢資料')
+ITV2.Editor.RefreshData({daily=true})
+assert(queryCount==queries+30,'事件未刷新資料')
 assert(calls.RemoveAllAnchors==anchors and calls.SetText==texts,'無變更的設定窗仍重排或寫入文字')
 status='complete'
-Frame('itv2EditorWindow',1000)
+ITV2.Editor.RefreshData({daily=true})
 assert(calls.SetText>texts and calls.RemoveAllAnchors==anchors,'狀態變更未更新或引發重排')
 queries=queryCount
 widgets.itv2EditorListSlider.handlers.OnSliderChanged(nil,40)
@@ -78,7 +80,7 @@ assert(queryCount==queries,'設定窗捲動查詢資料')
 Click('itv2ItemLabel1')
 childCount=4
 anchors=calls.RemoveAllAnchors
-Frame('itv2EditorWindow',1000)
+ITV2.Editor.RefreshData({daily=true})
 assert(widgets.itv2SubLabel4~=nil,'細項增加時未重建版面')
 assert(calls.RemoveAllAnchors>anchors,'結構改變應重新排版')
 -- 勾選框的引擎後置切換以下一幀同步，不能因文字快取而跳過。
@@ -185,3 +187,27 @@ assert(#messages == 1 and messages[1] == '0/0')
 Click('itv2Tab1')
 assert(not widgets.itv2QuestIdButton.visible and not widgets.itv2QuestIdInput.visible)
 print('PASS: 任務 ID 查詢頁隔離、空白不查詢、中文片段、英文大小寫、符號、去重與空日誌')
+
+-- 事件刷新沿用懸浮窗排版；任務頁的兩個計時器不再輪詢。
+ITV2.Popout.Refresh()
+anchors,texts,queries=calls.RemoveAllAnchors,calls.SetText,queryCount
+for i=1,120 do
+    Frame('itv2EditorWindow',1000)
+    Frame('itv2PopoutWindow',1000)
+end
+assert(queryCount==queries,'閒置任務頁仍輪詢')
+assert(calls.RemoveAllAnchors==anchors and calls.SetText==texts,'閒置任務頁仍重排或寫文字')
+ITV2.Popout.RefreshData({weekly=true})
+ITV2.Editor.RefreshData({weekly=true})
+assert(queryCount==queries,'未顯示分類仍查資料')
+status='notStarted'
+ITV2.Popout.RefreshData({daily=true})
+assert(calls.RemoveAllAnchors==anchors,'只有狀態變更卻重排')
+texts=calls.SetText
+ITV2.Popout.RefreshData({daily=true})
+assert(calls.SetText==texts and calls.RemoveAllAnchors==anchors,'狀態相同仍寫文字或重排')
+widgets.itv2EditorWindow:Show(false)
+queries=queryCount
+ITV2.Editor.RefreshData({daily=true})
+assert(queryCount==queries,'隱藏設定窗仍讀資料')
+print('PASS: 兩視窗閒置兩分鐘零任務刷新、無關頁與隱藏頁零讀取、懸浮窗狀態更新零重排')

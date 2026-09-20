@@ -362,9 +362,22 @@ end
 -- ============================================
 -- 排版與刷新
 -- ============================================
-local function Layout(cat, revealKey)
-    area:BeginLayout()
-    local ctx = Items.NewContext()
+local listSignature
+local function ReadData(cat)
+    local ctx, entries, signature = Items.NewContext(), {}, {cat.key}
+    for _, key in ipairs(S.orderByCat[cat.key]) do
+        if S.IsTracked(key) then
+            local canExpand = Items.CanExpand(key, ctx)
+            local children = expanded[key] and canExpand and Items.Children(key, ctx) or {}
+            entries[#entries + 1] = { key = key, view = Items.View(key, ctx), canExpand = canExpand, children = children }
+            signature[#signature + 1] = key .. ":" .. tostring(canExpand) .. ":" .. tostring(expanded[key]) .. ":" .. #children
+        end
+    end
+    return entries, table.concat(signature, "|")
+end
+
+local function Layout(cat, revealKey, entries, dataOnly)
+    if not dataOnly then area:BeginLayout() end
     local rowHeight = RowHeight()
     local subRowHeight = SubRowHeight()
 
@@ -372,12 +385,13 @@ local function Layout(cat, revealKey)
     local subShown = 0
     local y = 0
     local revealTop, revealBottom
-    for _, key in ipairs(S.orderByCat[cat.key]) do
-        if S.IsTracked(key) then
+    for _, entry in ipairs(entries) do
+        local key = entry.key
+        do
             shown = shown + 1
             EnsureRows(shown)
-            local view = Items.View(key, ctx)
-            local canExpand = Items.CanExpand(key, ctx)
+            local view = entry.view
+            local canExpand = entry.canExpand
             local isExpanded = expanded[key] and canExpand
             local text = view.shortText or view.text
             if canExpand then
@@ -387,12 +401,12 @@ local function Layout(cat, revealKey)
             local label = rows[shown]
             label.itemKey = key
             UI.SetStatusText(label, text, view.status)
-            area:Place(label, 0, y, rowHeight)
+            if not dataOnly then area:Place(label, 0, y, rowHeight) end
             y = y + rowHeight
 
             if isExpanded then
                 local childIndent = UI.ChildIndent(label, S.panel.fontItem)
-                local children = Items.Children(key, ctx)
+                local children = entry.children
                 EnsureSubRows(subShown + #children)
                 for _, child in ipairs(children) do
                     subShown = subShown + 1
@@ -403,7 +417,7 @@ local function Layout(cat, revealKey)
                         sub:SetExtent(ListWidth() - childIndent, subRowHeight)
                         sub.itv2ChildWidth = ListWidth() - childIndent
                     end
-                    area:Place(sub, childIndent, y, subRowHeight)
+                    if not dataOnly then area:Place(sub, childIndent, y, subRowHeight) end
                     y = y + subRowHeight
                 end
                 if key == revealKey then revealBottom = y end
@@ -411,6 +425,7 @@ local function Layout(cat, revealKey)
             end
         end
     end
+    if dataOnly then return y end
     for index = shown + 1, #rows do
         rows[index]:Show(false)
     end
@@ -427,8 +442,14 @@ local function Layout(cat, revealKey)
     return y, revealTop, revealBottom
 end
 
-function Popout.Refresh(revealKey)
+function Popout.Refresh(revealKey, dataOnly)
     local cat = CATEGORIES[S.popoutPage]
+    local entries, signature = ReadData(cat)
+    if dataOnly and signature == listSignature then
+        Layout(cat, nil, entries, true)
+        return
+    end
+    listSignature = signature
     local titleText = T(cat.label)
     if title.itv2Title ~= titleText then
         title:SetText(titleText)
@@ -436,7 +457,7 @@ function Popout.Refresh(revealKey)
     end
     prevButton:Enable(S.NextEnabledPage(S.popoutPage, -1) ~= S.popoutPage)
     nextButton:Enable(S.NextEnabledPage(S.popoutPage, 1) ~= S.popoutPage)
-    local height, revealTop, revealBottom = Layout(cat, revealKey)
+    local height, revealTop, revealBottom = Layout(cat, revealKey, entries, false)
     local repositioned = area:SetContentHeight(height)
     -- 只在主動展開時顯示新內容；定期刷新與收起不搶走捲動位置。
     if revealTop ~= nil and revealBottom ~= nil then
@@ -450,6 +471,10 @@ function Popout.Refresh(revealKey)
     if menu:IsVisible() then
         LayoutPageMenu()
     end
+end
+
+function Popout.RefreshData(changed)
+    if changed[CATEGORIES[S.popoutPage].key] then Popout.Refresh(nil, true) end
 end
 
 local elapsed = 0
@@ -471,12 +496,14 @@ body:SetHandler("OnUpdate", function(self, dt)
         end
     end
 
+    local kind = CATEGORIES[S.popoutPage].kind
+    if kind == "quest" or kind == "assignment" then return end
     elapsed = elapsed + dt
     if elapsed < REFRESH_MS then
         return
     end
     elapsed = 0
-    Popout.Refresh()
+    Popout.Refresh(nil, true)
 end)
 
 -- 回傳標題欄的有效座標，與位置存檔使用相同座標系。
