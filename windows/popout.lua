@@ -57,8 +57,8 @@ header:SetUILayer("game")
 local function AnchorHeader()
     header:RemoveAllAnchors()
     if S.popoutPosX ~= nil and S.popoutPosY ~= nil then
-        header:AddAnchor("TOPLEFT", "UIParent",
-            UI.EffectiveToAnchorOffset(S.popoutPosX), UI.EffectiveToAnchorOffset(S.popoutPosY))
+        -- 實機 150% UI 下，GetEffectiveOffset 可直接交回 AddAnchor；再除倍率會使位置縮小。
+        header:AddAnchor("TOPLEFT", "UIParent", S.popoutPosX, S.popoutPosY)
     else
         header:AddAnchor("TOPLEFT", "UIParent", DEFAULT_X, DEFAULT_Y)
     end
