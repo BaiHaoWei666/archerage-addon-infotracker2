@@ -112,6 +112,9 @@ if isCN then
     -- 面板設定
     texts.CAT_PANEL = "面板设定"
     texts.CAT_HELP = "说明"
+    texts.QUERY_QUEST_IDS = "查询ID"
+    texts.QUERY_QUEST_IDS_HINT = "输入任务名称关键字（例如：征兆）"
+    texts.QUERY_QUEST_IDS_RESULT = "[Quest ID] 已输出 %d / 已接 %d"
     texts.HELP_MOVE_TITLE = "移动悬浮窗"
     texts.HELP_DUNGEON_TITLE = "双击副本"
     texts.HELP_DUNGEON = "在悬浮窗双击副本名称，会弹出建立战队确认窗，可选择是否邀请队伍成员。确认后，支持单人进入的副本会先尝试快速匹配；不支持或匹配失败时，尝试建立非公开战队。"
@@ -234,6 +237,9 @@ else
     -- Panel settings
     texts.CAT_PANEL = "Panel"
     texts.CAT_HELP = "Help"
+    texts.QUERY_QUEST_IDS = "Query ID"
+    texts.QUERY_QUEST_IDS_HINT = "Enter part of a quest name to search."
+    texts.QUERY_QUEST_IDS_RESULT = "[Quest ID] Listed %d / Active %d"
     texts.HELP_MOVE_TITLE = "Move the panel"
     texts.HELP_DUNGEON_TITLE = "Double-click a dungeon"
     texts.HELP_DUNGEON = "Double-click a dungeon in the floating panel to open squad confirmation. You can invite party members. After confirmation, eligible solo dungeons try quick matching first; otherwise, or if that fails, a private squad is attempted."

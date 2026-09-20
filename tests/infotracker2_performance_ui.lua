@@ -12,7 +12,7 @@ local function Widget(name)
     end})
     setmetatable(w,{__index=function(_,key)
         if string.sub(key,1,4)=='itv2' then return nil end
-        if key=='CreateChildWidget' then return function(_,_,id) return Widget(id) end end
+        if (key=='CreateChildWidget' or key=='CreateChildWidgetByType') then return function(_,_,id) return Widget(id) end end
         if key=='CreateDrawable' or key=='CreateColorDrawable' then return function() return Widget() end end
         if key=='SetHandler' then return function(self,event,fn) self.handlers[event]=fn end end
         if key=='Show' then return function(self,value) self.visible=value;Count(key) end end
@@ -37,7 +37,7 @@ OBJECT_TYPE={};ALIGN_CENTER=0;ALIGN_LEFT=1
 CreateEmptyWindow=Widget
 UIParent={GetFontColor=function() return {1,1,1,1} end}
 dofile('core.lua')
-ITV2.Text=function(key) if key=='TRACKED_SUMMARY' then return '%d/%d' end;return key end
+ITV2.Text=function(key) if key=='TRACKED_SUMMARY' or key=='QUERY_QUEST_IDS_RESULT' then return '%d/%d' end;return key end
 ITV2.SOURCES={}
 ITV2.CATEGORIES={{key='daily',label='daily',kind='quest'}}
 local order={}
@@ -149,3 +149,39 @@ assert(widgets.itv2PanelDragHint==nil,'移動說明仍留在面板設定頁')
 Click('itv2Tab1')
 assert(not widgets.itv2HelpText2.visible and widgets.itv2TrackAllButton.visible,'分類頁切換未恢復追蹤操作')
 print('PASS: 說明頁切換、內容隔離及閒置零查詢零重排')
+
+-- 查詢頁閒置不讀日誌，空白不查詢，片段採純文字且英文不分大小寫。
+local journal, messages, journalCalls = {701, 702, 701}, {}, 0
+local titles = {[701] = '安息之地農家', [702] = 'Quest [A]'}
+X2Quest = {
+    GetActiveQuestListCount = function() journalCalls = journalCalls + 1; return #journal end,
+    GetActiveQuestType = function(_, index) return journal[index] end,
+    GetQuestContextMainTitle = function(_, id) return titles[id] end,
+}
+ITV2.Chat = function(message) messages[#messages + 1] = message end
+widgets.itv2QuestIdInput.GetText = function(self) return self.text end
+Click('itv2Tab4')
+assert(widgets.itv2QuestIdButton.visible and widgets.itv2QuestIdInput.visible)
+assert(not widgets.itv2HelpText1.visible and not widgets.itv2TrackAllButton.visible)
+Frame('itv2EditorWindow', 1000)
+assert(journalCalls == 0)
+widgets.itv2QuestIdInput:SetText('   ')
+Click('itv2QuestIdButton')
+assert(journalCalls == 0 and #messages == 0)
+widgets.itv2QuestIdInput:SetText(' 安息 ')
+Click('itv2QuestIdButton')
+assert(#messages == 2 and messages[1] == '[Quest ID] 安息之地農家 = 701' and messages[2] == '1/3')
+messages = {}
+widgets.itv2QuestIdInput:SetText('[a]')
+Click('itv2QuestIdButton')
+assert(#messages == 2 and messages[1] == '[Quest ID] Quest [A] = 702')
+messages = {}
+widgets.itv2QuestIdInput:SetText('missing')
+Click('itv2QuestIdButton')
+assert(#messages == 1 and messages[1] == '0/3')
+journal, messages = {}, {}
+Click('itv2QuestIdButton')
+assert(#messages == 1 and messages[1] == '0/0')
+Click('itv2Tab1')
+assert(not widgets.itv2QuestIdButton.visible and not widgets.itv2QuestIdInput.visible)
+print('PASS: 任務 ID 查詢頁隔離、空白不查詢、中文片段、英文大小寫、符號、去重與空日誌')

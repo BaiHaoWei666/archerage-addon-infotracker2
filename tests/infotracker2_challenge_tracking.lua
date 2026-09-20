@@ -12,7 +12,7 @@ local function Widget(name)
     end})
     setmetatable(w,{__index=function(_,key)
         if string.sub(key,1,4)=='itv2' then return nil end
-        if key=='CreateChildWidget' then return function(_,_,id) return Widget(id) end end
+        if (key=='CreateChildWidget' or key=='CreateChildWidgetByType') then return function(_,_,id) return Widget(id) end end
         if key=='CreateDrawable' or key=='CreateColorDrawable' then return function() return Widget() end end
         if key=='SetHandler' then return function(self,event,fn) self.handlers[event]=fn end end
         if key=='Show' then return function(self,value) self.visible=value;Count(key) end end
