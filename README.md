@@ -4,6 +4,8 @@ ArcheRage 的任務與角色資訊追蹤插件，提供分類懸浮窗、追蹤�
 
 本專案基於 infotracker 的部分程式與功能延伸開發，原作者為 **Discord @Nevermore (奈奈呀)**；依作者同意維持原始碼公開、免費使用。授權條件與來源、沿用範圍與 UI 概念參考見 [COPYRIGHT.md](COPYRIGHT.md)。
 
+UI 操作概念參考 **choretracker**，原作者為 **Strawberry（Discord：exec_noir）**。依本專案維護者收到的同意，使用與修改其作品須註明出處；授權條件與來源記錄於 [COPYRIGHT.md](COPYRIGHT.md)。感謝原作者分享作品。
+
 ## 安裝
 
 可透過 [插件管理器](https://github.com/BaiHaoWei666/archerage-addons-installer/releases/latest) 安裝及更新，無須提供權杖。
