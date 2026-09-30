@@ -13,3 +13,9 @@
 - 封裝以 manifest 的 files 白名單為準，排除 Git、開發設定及測試資料。
 - 一般提交格式為 type: 繁體中文摘要，或 type(scope): 繁體中文摘要；版本提交固定為 chore(infotracker2): bump version to <版本號>。
 - 程式／文件與版本收尾分開提交。推送明列 main 或單一 v<版本號> tag，不使用 --tags。
+
+# 更新紀錄
+
+- manifest.json 的 changelog 與 GitHub Release 說明面向使用者，以簡短、具體的繁體中文描述可感知的新功能、問題修正及必要操作。
+- 只列本次對使用者的影響；不列實作細節、重構、測試過程或結果、內部維護及作者同意／來源署名等項目。署名保留於 COPYRIGHT.md 等適當文件。
+- GitHub Release 說明與 manifest.json 同版本的 notes 保持一致，不直接以 Git 提交清單或自動產生的發布說明代替。例：「修正轉場後部分任務已完成，但追蹤進度未更新的問題。」
