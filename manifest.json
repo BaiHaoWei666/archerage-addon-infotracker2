@@ -2,10 +2,17 @@
   "schemaVersion": 1,
   "name": "infotracker2",
   "displayName": "InfoTracker v2",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "category": "資訊",
   "description": "資訊追蹤：任務、每日挑戰、角色資訊、今日淨收入、副本",
   "changelog": [
+    {
+      "version": "1.0.8",
+      "date": "2026-09-30",
+      "notes": [
+        "修正轉場後部分任務已完成，但追蹤進度未更新的問題。"
+      ]
+    },
     {
       "version": "1.0.7",
       "date": "2026-09-21",
