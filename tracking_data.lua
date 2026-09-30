@@ -200,6 +200,19 @@ function Data.AssignmentEvent(value)
     Data.Invalidate("info", "INFO_DAILY")
 end
 
+-- 讀取結束當下只補記 API 已確認完成的任務；單筆失敗保留原狀，不阻斷其他任務。
+function Data.ReconcileLoading()
+    for id, state in pairs(quests) do
+        if not state.completed then
+            local ok, complete = pcall(function() return X2Quest:IsCompleted(id) end)
+            if ok and complete == true then
+                state.completed, state.active = true, false
+                for category in pairs(questCategories[id]) do Notify(category) end
+            end
+        end
+    end
+end
+
 function Data.RegisterEvents()
     local function PollNext()
         Data.Poll()
@@ -211,13 +224,7 @@ function Data.RegisterEvents()
     UIParent:SetEventHandler(UIEVENT_TYPE.START_TODAY_ASSIGNMENT, function()
         Data.AssignmentEvent()
     end)
-    UIParent:SetEventHandler(UIEVENT_TYPE.ENTERED_WORLD, function()
-        -- 進場同步一次，不對場景中每個任務通知各自全讀。
-        ITV2.Schedule("tracking-world", 0, function()
-            Data.Initialize()
-            for _, cat in ipairs(ITV2.CATEGORIES) do
-                Notify(cat.key)
-            end
-        end)
-    end)
+    if UIEVENT_TYPE.LEFT_LOADING ~= nil then
+        UIParent:SetEventHandler(UIEVENT_TYPE.LEFT_LOADING, Data.ReconcileLoading)
+    end
 end
