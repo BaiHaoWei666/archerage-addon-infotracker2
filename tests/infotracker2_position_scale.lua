@@ -67,7 +67,6 @@ for _,scale in ipairs({1.1,1.2,1,1.25,1.5}) do
             UIParent={GetFontColor=function()return {1,1,1,1}end,GetUIScale=function()return scale end}
             F_LAYOUT=hasLayoutHelper and {CalcDontApplyUIScale=function(value)return value/scale end} or nil
             X2Chat={DispatchChatMessage=function(_,_,message)messages[#messages+1]=message end}
-            X2Input={IsShiftKeyDown=function()return true end}
             dofile('core.lua')
             ITV2.Text=function(key)return key end
             dofile('quest_data.lua')
@@ -87,7 +86,7 @@ for _,scale in ipairs({1.1,1.2,1,1.25,1.5}) do
             end
             CheckPosition(initialX,initialY)
             assert(#messages==1 and messages[1]=='LOADED','正確還原仍觸發診斷')
-            assert(header.dragEnabled==true,'標題列未啟用拖曳')
+            assert(header.dragEnabled==true,'標題列未啟用左鍵拖曳')
             local enables=calls.EnableDrag
             for i=1,60 do Frame(16) end
             assert(calls.EnableDrag==enables,'閒置時仍重設拖曳能力')
@@ -125,4 +124,4 @@ for _,scale in ipairs({1.1,1.2,1,1.25,1.5}) do
         end
     end
 end
-print('PASS: 100%／110%／120%／125%／150% 縮放座標、舊存檔、Shift 拖曳及連續重載')
+print('PASS: 100%／110%／120%／125%／150% 縮放座標、舊存檔、左鍵拖曳及連續重載')

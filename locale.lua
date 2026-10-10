@@ -26,7 +26,6 @@ if isCN then
     texts.QUEST_FALLBACK = "任务 %d"
     texts.QUEST_SUPPLY_SHORTAGE = "物资不足"
     texts.QUEST_NIGHTMARE_STAGE3 = "消灭噩梦军团第三阶段"
-    texts.SHIFT_UNAVAILABLE = "[资讯追踪] 无法读取 Shift 键状态，标题栏暂时不需按 Shift 即可拖动"
     texts.DUMP_HEADER = "== %s (上限 %d) =="
     texts.DUMP_LINE = "%s%s: %s"
 
@@ -130,7 +129,7 @@ if isCN then
     texts.PANEL_FONT_ITEM = "主项字体: %d"
     texts.PANEL_FONT_SUB = "细项字体: %d"
     texts.PANEL_BG_ALPHA = "背景不透明度: %d%%"
-    texts.PANEL_DRAG_HINT = "Shift + 左键拖动悬浮窗标题栏可移动位置"
+    texts.PANEL_DRAG_HINT = "按住左键拖动悬浮窗标题栏可移动位置"
 else
     texts.EDITOR_TITLE = "Info Tracker - Setup"
     texts.LOADED = "[InfoTracker v2] Loaded"
@@ -153,7 +152,6 @@ else
     texts.QUEST_FALLBACK = "Quest %d"
     texts.QUEST_SUPPLY_SHORTAGE = "Supply Shortage"
     texts.QUEST_NIGHTMARE_STAGE3 = "Nightmare Legion Stage 3"
-    texts.SHIFT_UNAVAILABLE = "[Info Tracker] Cannot read the Shift key; the title bar can be dragged without Shift for now"
     texts.DUMP_HEADER = "== %s (cap %d) =="
     texts.DUMP_LINE = "%s%s: %s"
 
@@ -257,7 +255,7 @@ else
     texts.PANEL_FONT_ITEM = "Item font: %d"
     texts.PANEL_FONT_SUB = "Sub-item font: %d"
     texts.PANEL_BG_ALPHA = "Background opacity: %d%%"
-    texts.PANEL_DRAG_HINT = "Shift + left-drag the panel title bar to move it"
+    texts.PANEL_DRAG_HINT = "Left-drag the panel title bar to move it"
 end
 
 function ITV2.Text(key)

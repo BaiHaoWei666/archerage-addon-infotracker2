@@ -14,7 +14,6 @@ ADDON:ImportObject(OBJECT_TYPE.TEXTBOX)
 ADDON:ImportObject(OBJECT_TYPE.EDITBOX)
 ADDON:ImportObject(OBJECT_TYPE.X2_EDITBOX)
 ADDON:ImportObject(OBJECT_TYPE.CHECK_BUTTON)
-ADDON:ImportAPI(API_TYPE.INPUT.id)
 
 local T = ITV2.Text
 
@@ -205,16 +204,14 @@ end
 -- ============================================
 -- 視窗
 -- ============================================
--- 拖動 handle 時移動 target；canDrag 回傳 false 時不動。
+-- 拖動 handle 時移動 target，開始與結束時通知呼叫端。
 -- 拖動的元件必須自己 StartMoving，叫別的視窗移動不會生效。
-function UI.EnableWindowDrag(handle, target, canDrag, onStop)
+function UI.EnableWindowDrag(handle, target, onStart, onStop)
     handle:EnableDrag(true)
     handle:SetHandler("OnDragStart", function()
-        if canDrag ~= nil and not canDrag() then
-            return
-        end
         target:StartMoving()
         target.itv2Moving = true
+        if onStart ~= nil then onStart(target) end
         return true
     end)
     handle:SetHandler("OnDragStop", function()
@@ -244,22 +241,6 @@ function UI.CreateDialog(id, width, height, offsetY)
     bg:AddAnchor("TOPLEFT", window, -5, -5)
     bg:AddAnchor("BOTTOMRIGHT", window, 5, 5)
     return window
-end
-
--- 讀不到 Shift 狀態時不要讓標題欄變成完全拖不動：先放行，並提示一次
-local shiftWarned = false
-function UI.IsShiftDown()
-    local ok, down = pcall(function()
-        return X2Input:IsShiftKeyDown()
-    end)
-    if ok then
-        return down == true
-    end
-    if not shiftWarned then
-        shiftWarned = true
-        ITV2.Chat(T("SHIFT_UNAVAILABLE"))
-    end
-    return true
 end
 
 -- ============================================

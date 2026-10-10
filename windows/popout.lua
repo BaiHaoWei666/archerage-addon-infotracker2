@@ -1,5 +1,5 @@
 -- 懸浮小窗
--- 標題欄：根視窗（位置存檔存它），常駐顯示目前分類；單擊展開分類選單；Shift + 左鍵拖動可移動；
+-- 標題欄：根視窗（位置存檔存它），常駐顯示目前分類；單擊展開分類選單；左鍵拖動可移動；
 --         左右切頁（到頭尾時停用，不繞回）與齒輪只在滑鼠懸停時出現
 -- 本體：掛在標題欄下方，固定高度，列出目前分類裡已追蹤的項目，超出時捲動
 -- 寬高、字體、不透明度來自面板設定，改變時由 Popout.ApplyLayout() 套用
@@ -66,12 +66,11 @@ end
 
 -- 標題欄單擊（沒有拖動）時開關分類選單，拖動過就不算單擊
 local headerDragged = false
-local function CanDragHeader()
+local function MarkHeaderDrag()
     headerDragged = true
-    return UI.IsShiftDown()
 end
 
-UI.EnableWindowDrag(header, header, CanDragHeader, function(self)
+UI.EnableWindowDrag(header, header, MarkHeaderDrag, function(self)
     -- 原生拖曳已完成定位；只保存 UI 座標，避免放開時重新錨定造成縮放跳位。
     local x, y = self:GetOffset()
     S.popoutPosX = tonumber(x) or S.popoutPosX

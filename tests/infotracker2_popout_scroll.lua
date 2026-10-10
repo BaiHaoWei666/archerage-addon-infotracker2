@@ -27,7 +27,7 @@ local function Widget(name)
 end
 ADDON = { ImportObject = function() end, ImportAPI = function() end }
 OBJECT_TYPE = {}
-API_TYPE = { INPUT = { id = 1 } }
+API_TYPE = {}
 ALIGN_CENTER = 0
 CreateEmptyWindow = Widget
 ITV2 = { Text = function(key) return key end, STATUS_PREFIX = {} }
