@@ -370,6 +370,9 @@ local function ReadData(cat)
             local children = expanded[key] and canExpand and Items.Children(key, ctx) or {}
             entries[#entries + 1] = { key = key, view = Items.View(key, ctx), canExpand = canExpand, children = children }
             signature[#signature + 1] = key .. ":" .. tostring(canExpand) .. ":" .. tostring(expanded[key]) .. ":" .. #children
+            for _, child in ipairs(children) do
+                signature[#signature + 1] = child.action ~= nil and "search" or "text"
+            end
         end
     end
     return entries, table.concat(signature, "|")
@@ -411,12 +414,8 @@ local function Layout(cat, revealKey, entries, dataOnly)
                     subShown = subShown + 1
                     local sub = subRows[subShown]
                     UI.SetStatusText(sub, "· " .. child.text, child.status)
-                    UI.SetSubRowAction(sub, child.action)
-                    if sub.itv2ChildWidth ~= ListWidth() - childIndent then
-                        sub:SetExtent(ListWidth() - childIndent, subRowHeight)
-                        sub.itv2ChildWidth = ListWidth() - childIndent
-                    end
-                    if not dataOnly then area:Place(sub, childIndent, y, subRowHeight) end
+                    UI.PlaceSubRow(area, sub, child.action, childIndent, y,
+                        ListWidth() - childIndent, subRowHeight, dataOnly)
                     y = y + subRowHeight
                 end
                 if key == revealKey then revealBottom = y end
@@ -429,7 +428,7 @@ local function Layout(cat, revealKey, entries, dataOnly)
         rows[index]:Show(false)
     end
     for index = subShown + 1, #subRows do
-        subRows[index]:Show(false)
+        UI.HideSubRow(subRows[index])
     end
 
     if shown == 0 then

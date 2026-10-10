@@ -5,7 +5,7 @@
 --                              status：notStarted | inProgress | complete | neutral
 --   expandable              -> 是否能展開
 --   CanExpand(item, ctx)    -> 個別項目能否展開（省略 = 全部都能展開）
---   Children(item, ctx)     -> { { text, status, action }, ... }（action：雙擊細項時執行，可省略）
+--   Children(item, ctx)     -> { { text, status, action }, ... }（action：點擊搜尋按鈕或雙擊細項時執行，可省略）
 --   Activate(item, options) -> 懸浮窗雙擊並確認後執行（副本；options.inviteParty）
 --   GetName(item)           -> 詢問窗顯示的名稱（有 Activate 的來源才需要）
 -- ctx：每次重新整理新建的空表，來源可以在裡面快取本次重新整理會重複用到的資料

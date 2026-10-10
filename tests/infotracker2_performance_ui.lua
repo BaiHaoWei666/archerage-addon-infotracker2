@@ -6,6 +6,7 @@ local function Widget(name)
     w.style=setmetatable({}, {__index=function(_,method)
         return function(self,value)
             Count('style.'..method)
+            if method=='GetTextWidth' then return #value*6 end
             if method=='SetShadow' then self.shadow=value end
             if method=='SetFontSize' then self.fontSize=value end
         end
@@ -19,6 +20,7 @@ local function Widget(name)
         if key=='IsVisible' then return function(self) return self.visible end end
         if key=='IsMouseOver' then return function(self) Count(key);return self.over==true end end
         if key=='SetText' then return function(self,text) self.text=text;Count(key) end end
+        if key=='SetExtent' then return function(self,width,height) self.width,self.height=width,height;Count(key) end end
         if key=='SetChecked' then return function(self,value) self.checked=value;Count(key) end end
         return function() Count(key) end
     end})
@@ -52,11 +54,13 @@ ITV2.Settings={
     NextEnabledPage=function() return 1 end,Save=function() end,
 }
 local queryCount, childCount, status=0,2,'neutral'
+local childActions={}
+local childTexts={}
 ITV2.Items={
     NewContext=function() return {} end,
     View=function(key) queryCount=queryCount+1;return {text=key,status=status} end,
     CanExpand=function() return true end,
-    Children=function() local out={};for i=1,childCount do out[i]={text=tostring(i),status='neutral'} end;return out end,
+    Children=function() local out={};for i=1,childCount do out[i]={text=childTexts[i] or tostring(i),status='neutral',action=childActions[i]} end;return out end,
     GetName=function() return 'test' end,
 }
 dofile('windows/widgets.lua')
@@ -239,3 +243,97 @@ assert(queryCount==queries,'隱藏懸浮窗仍刷新')
 Click('itv2Tab2')
 assert(ITV2.Editor.GetDataDemand()==nil,'設定頁仍宣告資料需求')
 print('PASS: 所有來源移除視窗輪詢、隱藏／設定頁零需求、懸浮窗只要求已追蹤項目')
+
+-- 搜尋按鈕與材料文字共用資料，但分別使用單擊與雙擊操作。
+local searches={}
+childCount=2
+childActions={function() searches[#searches+1]='first' end,function() searches[#searches+1]='second' end}
+ITV2.CATEGORIES[1].kind='quest'
+tracked['1']=true
+Click('itv2Tab1')
+widgets.itv2EditorListSlider.handlers.OnSliderChanged(nil,0)
+widgets.itv2PopoutWindow:Show(true)
+ITV2.Popout.Refresh()
+Click('itv2PopRow1')
+local function RefreshMaterials()
+    ITV2.Editor.RefreshData({daily=true})
+    ITV2.Popout.RefreshData({daily=true})
+end
+local materialRows={'itv2SubLabel','itv2PopSubRow'}
+for _,prefix in ipairs(materialRows) do
+    local label,button=widgets[prefix..'1'],widgets[prefix..'1Search']
+    assert(button and button.visible,'可交易材料缺少搜尋按鈕：'..prefix)
+    local nextButton=widgets[prefix..'2Search']
+    assert(button.itv2Placement.x+button.width==nextButton.itv2Placement.x+nextButton.width,'材料搜尋按鈕未靠右對齊：'..prefix)
+    assert(label.itv2Placement.x+label.width+4==button.itv2Placement.x,'材料文字與按鈕重疊：'..prefix)
+    assert(button.width==button.height and button.height<label.height,'搜尋按鈕應小於材料列高')
+    assert(button.itv2Placement.y+(button.height/2)==label.itv2Placement.y+(label.height/2),'搜尋按鈕未垂直置中')
+    assert(button.handlers.OnWheelUp and button.handlers.OnWheelDown,'搜尋按鈕未轉交滾輪')
+    local before=#searches
+    Click(prefix..'1Search')
+    assert(#searches==before+1 and searches[#searches]=='first','按鈕未搜尋對應材料')
+    button.handlers.OnClick(button,'RightButton',false)
+    button.handlers.OnClick(button,'LeftButton',true)
+    Click(prefix..'1')
+    assert(#searches==before+1,'右鍵、雙擊後續事件或文字單擊誤觸搜尋')
+    label.handlers.OnClick(label,'LeftButton',true)
+    assert(#searches==before+2,'文字雙擊搜尋失效')
+end
+anchors=calls.RemoveAllAnchors
+childActions[1]=function() searches[#searches+1]='replacement' end
+RefreshMaterials()
+assert(calls.RemoveAllAnchors==anchors,'只更新材料動作卻重排清單')
+for _,prefix in ipairs(materialRows) do
+    Click(prefix..'1Search')
+    assert(searches[#searches]=='replacement','搜尋按鈕保留舊材料動作')
+end
+-- 交易性改變但列數不變時，隱藏舊按鈕並還原文字寬度。
+local oldWidth=widgets.itv2SubLabel1.width
+childActions[1]=nil
+RefreshMaterials()
+assert(widgets.itv2SubLabel1.width>oldWidth,'無搜尋動作的材料未還原文字寬度')
+for _,prefix in ipairs(materialRows) do
+    local button=widgets[prefix..'1Search']
+    assert(not button.visible and button.itv2Action==nil,'非賣品殘留搜尋按鈕或動作')
+    local before=#searches
+    Click(prefix..'1Search')
+    assert(#searches==before,'隱藏按鈕仍執行舊材料搜尋')
+end
+childActions[1]=childActions[2]
+RefreshMaterials()
+for _,prefix in ipairs(materialRows) do
+    assert(widgets[prefix..'1Search'].visible,'重新變成可交易材料時未恢復搜尋按鈕')
+    Click(prefix..'1Search')
+    assert(searches[#searches]=='second','重用按鈕未更新材料')
+end
+-- 材料名稱或數量改變不移動右側按鈕；長名稱仍保留按鈕空間。
+local shortX=widgets.itv2PopSubRow1Search.itv2Placement.x
+childTexts[1]='material x12'
+RefreshMaterials()
+assert(widgets.itv2PopSubRow1Search.itv2Placement.x==shortX,'材料文字變長後按鈕偏離右側')
+childTexts[1]=string.rep('material',100)
+RefreshMaterials()
+for _,prefix in ipairs(materialRows) do
+    local label,button=widgets[prefix..'1'],widgets[prefix..'1Search']
+    assert(label.width<#label.itv2Text*6,'長材料名稱未限制寬度')
+    assert(label.itv2Placement.x+label.width+4==button.itv2Placement.x,'長材料名稱與搜尋按鈕重疊')
+end
+anchors=calls.RemoveAllAnchors
+local measurements=calls['style.GetTextWidth']
+RefreshMaterials()
+assert(calls.RemoveAllAnchors==anchors and calls['style.GetTextWidth']==measurements,'材料未變卻重新量測文字或移動按鈕')
+-- 捲出可視範圍、收合與切頁時，搜尋按鈕跟隨材料列消失。
+for _,id in ipairs({'itv2EditorListSlider','itv2PopListSlider'}) do
+    widgets[id].handlers.OnSliderChanged(nil,500)
+end
+for _,prefix in ipairs(materialRows) do
+    assert(not widgets[prefix..'1Search'].visible,'捲出畫面的搜尋按鈕仍顯示')
+end
+for _,id in ipairs({'itv2EditorListSlider','itv2PopListSlider'}) do
+    widgets[id].handlers.OnSliderChanged(nil,0)
+end
+Click('itv2PopRow1')
+assert(not widgets.itv2PopSubRow1Search.visible and widgets.itv2PopSubRow1Search.itv2Action==nil,'收合後殘留材料按鈕')
+Click('itv2Tab2')
+assert(not widgets.itv2SubLabel1Search.visible and widgets.itv2SubLabel1Search.itv2Action==nil,'切頁後殘留材料按鈕')
+print('PASS: 兩視窗材料單擊搜尋、文字雙擊、動作更新零重排、非賣品與重用、捲動／收合／切頁清理')

@@ -82,6 +82,7 @@ end
 
 function UI.CreateLabel(parent, id, width, height, fontSize)
     local label = parent:CreateChildWidget("label", id, 0, true)
+    label.itv2Id = id
     label:SetExtent(width, height)
     label.style:SetAlign(ALIGN_LEFT)
     label.style:SetFontSize(fontSize)
@@ -102,6 +103,7 @@ end
 -- 單行文字，超出寬度顯示「...」
 function UI.CreateEllipsisText(parent, id, fontSize)
     local box = parent:CreateChildWidget("textbox", id, 0, true)
+    box.itv2Id = id
     box:SetAutoWordwrap(false)
     box.style:SetAlign(ALIGN_LEFT)
     box.style:SetFontSize(fontSize)
@@ -198,6 +200,77 @@ end
 function UI.RunSubRowAction(self, doubleClick)
     if doubleClick and self.itv2Action ~= nil then
         pcall(self.itv2Action)
+    end
+end
+
+local SUB_SEARCH_GAP = 4
+local SUB_SEARCH_TEXTURE = "ui/button/common/reading_glasses.dds"
+
+local function CreateSubSearchButton(parent, id, size)
+    local button = parent:CreateChildWidget("button", id, 0, true)
+    button:SetExtent(size, size)
+    button.itv2SearchSize = size
+    local skins = {
+        { key = "btn_view_normal", setter = "SetNormalBackground" },
+        { key = "btn_view_highlighted", setter = "SetHighlightBackground" },
+        { key = "btn_view_pushed", setter = "SetPushedBackground" },
+        { key = "btn_view_disabled", setter = "SetDisabledBackground" },
+    }
+    for _, skin in ipairs(skins) do
+        local drawable = button:CreateDrawable(SUB_SEARCH_TEXTURE, skin.key, "background")
+        drawable:AddAnchor("TOPLEFT", button, 0, 0)
+        drawable:AddAnchor("BOTTOMRIGHT", button, 0, 0)
+        button[skin.setter](button, drawable)
+    end
+    UI.OnLeftClick(button, function(self, doubleClick)
+        if not doubleClick and self:IsVisible() and self.itv2Action ~= nil then
+            pcall(self.itv2Action)
+        end
+    end)
+    button:Show(false)
+    return button
+end
+
+-- 搜尋按鈕在材料列內垂直置中，與文字共用捲動裁切；只有可查詢的細項才建立按鈕。
+function UI.PlaceSubRow(area, label, action, x, y, width, height, dataOnly)
+    UI.SetSubRowAction(label, action)
+    local buttonSize = math.max(1, height - 4)
+    local button = label.itv2SearchButton
+    if action ~= nil and button == nil then
+        button = CreateSubSearchButton(area.content, label.itv2Id .. "Search", buttonSize)
+        area:BindWheel(button)
+        label.itv2SearchButton = button
+    end
+    local textWidth = math.max(1, width - (action ~= nil and buttonSize + SUB_SEARCH_GAP or 0))
+    if label.itv2ChildWidth ~= textWidth or label.itv2ChildHeight ~= height then
+        label:SetExtent(textWidth, height)
+        label.itv2ChildWidth, label.itv2ChildHeight = textWidth, height
+    end
+    if button ~= nil then
+        button.itv2Action = action
+        if action == nil then
+            button:Show(false)
+        elseif button.itv2SearchSize ~= buttonSize then
+            button:SetExtent(buttonSize, buttonSize)
+            button.itv2SearchSize = buttonSize
+        end
+    end
+    if not dataOnly then
+        area:Place(label, x, y, height)
+        if action ~= nil then
+            area:Place(button, x + width - buttonSize,
+                y + math.floor((height - buttonSize) / 2), buttonSize)
+            button:Raise()
+        end
+    end
+end
+
+function UI.HideSubRow(label)
+    label:Show(false)
+    UI.SetSubRowAction(label, nil)
+    if label.itv2SearchButton ~= nil then
+        label.itv2SearchButton.itv2Action = nil
+        label.itv2SearchButton:Show(false)
     end
 end
 

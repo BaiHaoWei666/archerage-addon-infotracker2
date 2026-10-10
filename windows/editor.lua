@@ -210,6 +210,7 @@ local function EnsureSubRows(count)
         local label = UI.CreateLabel(listParent, "itv2SubLabel" .. index,
             LIST_WIDTH - LABEL_AFTER_CHECK, SUB_ROW_HEIGHT, SUB_FONT_SIZE)
         label.style:SetShadow(true)
+        label.style:SetEllipsis(true)
         label:EnablePick(false)
         area:BindWheel(label)
         UI.OnLeftClick(label, UI.RunSubRowAction)
@@ -229,7 +230,7 @@ end
 
 local function HideSubRows(fromIndex)
     for index = fromIndex, #subRows do
-        subRows[index]:Show(false)
+        UI.HideSubRow(subRows[index])
     end
 end
 
@@ -247,6 +248,9 @@ local function ReadList(cat)
             isExpanded = isExpanded, children = children,
         }
         signature[#signature + 1] = key .. ":" .. tostring(canExpand) .. ":" .. tostring(isExpanded) .. ":" .. #children
+        for _, child in ipairs(children) do
+            signature[#signature + 1] = child.action ~= nil and "search" or "text"
+        end
     end
     return entries, table.concat(signature, "|")
 end
@@ -301,13 +305,10 @@ local function LayoutItemList(cat, entries, dataOnly)
                 subIndex = subIndex + 1
                 local label = subRows[subIndex]
                 UI.SetStatusText(label, "· " .. child.text, child.status)
-                UI.SetSubRowAction(label, child.action)
                 -- 細項相對主項文字縮排，與懸浮窗一致。
-                if not dataOnly then
-                    local childX = labelX + UI.ChildIndent(row.label, ITEM_FONT_SIZE)
-                    label:SetExtent(LIST_WIDTH - childX, SUB_ROW_HEIGHT)
-                    area:Place(label, childX, y, SUB_ROW_HEIGHT)
-                end
+                local childX = labelX + UI.ChildIndent(row.label, ITEM_FONT_SIZE)
+                UI.PlaceSubRow(area, label, child.action, childX, y,
+                    LIST_WIDTH - childX, SUB_ROW_HEIGHT, dataOnly)
                 y = y + SUB_ROW_HEIGHT
             end
             y = y + EXPANDED_GAP

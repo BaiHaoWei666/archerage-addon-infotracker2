@@ -50,7 +50,7 @@ ITV2.SOURCES.assignment = {
         return GetSpecialtyCraft(item, ctx) ~= nil
     end,
 
-    -- 特產挑戰：製作材料「材料名 x數量」，雙擊到拍賣場查詢（非賣品除外）
+    -- 特產挑戰：製作材料「材料名 x數量」，可交易材料提供拍賣場查詢動作。
     Children = function(item, ctx)
         local out = {}
         local craftType = GetSpecialtyCraft(item, ctx)

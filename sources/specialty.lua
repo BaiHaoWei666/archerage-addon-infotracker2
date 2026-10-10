@@ -1,4 +1,4 @@
--- 特產挑戰：挑戰 → 特產配方 → 製作材料，以及雙擊材料時的拍賣場查詢
+-- 特產挑戰：挑戰 → 特產配方 → 製作材料，以及材料的拍賣場查詢
 -- 所有任務狀態統一依名稱比對；配方名稱索引與材料資料保留記憶體快取。
 ADDON:ImportAPI(API_TYPE.CRAFT.id)
 ADDON:ImportAPI(API_TYPE.AUCTION.id)
