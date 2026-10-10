@@ -2,10 +2,18 @@
   "schemaVersion": 1,
   "name": "infotracker2",
   "displayName": "InfoTracker v2",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "category": "資訊",
   "description": "資訊追蹤：任務、每日挑戰、角色資訊、今日淨收入、副本",
   "changelog": [
+    {
+      "version": "1.0.9",
+      "date": "2026-10-11",
+      "notes": [
+        "修正 UI 縮放下懸浮窗拖曳放開或重新載入後位置偏移的問題。",
+        "懸浮窗改為直接按住左鍵拖曳標題列，不再需要按住 Shift。"
+      ]
+    },
     {
       "version": "1.0.8",
       "date": "2026-09-30",
