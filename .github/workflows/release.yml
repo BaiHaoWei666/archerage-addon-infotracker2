@@ -40,4 +40,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --title "$GITHUB_REF_NAME" --generate-notes
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          manifest = json.loads(Path("dist/manifest.json").read_text(encoding="utf-8"))
+          assert os.environ["GITHUB_REF_NAME"] == "v" + manifest["version"], "Tag 與封裝版本不一致"
+          entry = next(item for item in manifest["changelog"] if item["version"] == manifest["version"])
+          notes = "\n".join("- " + note for note in entry["notes"]) + "\n"
+          Path(os.environ["RUNNER_TEMP"], "release-notes.md").write_text(notes, encoding="utf-8")
+          PY
+          gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/release-notes.md"
