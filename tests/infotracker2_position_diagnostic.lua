@@ -1,11 +1,11 @@
 -- 缺少座標時保留原始存檔；正常位置不輸出，重複呼叫不洗版。
-local function Check(saved, expected, reason, truncated, beforeReport, actual)
+local function Check(saved, expected, reason, truncated, beforeReport, actual, scale)
     local messages = {}
     ADDON = {LoadData = function() return saved end}
     ITV2 = {
         Text = function(key) return key end,
         Chat = function(message) messages[#messages + 1] = message end,
-        GetUiScale = function() return 1 end,
+        GetUiScale = function() return scale or 1 end,
     }
     dofile('quest_data.lua')
     dofile('items.lua')
@@ -57,6 +57,8 @@ Check({popout={x='120', y='240', anchor='header'}}, nil)
 Check({popout={x=0, y=-42, anchor='header'}}, nil)
 local legacy = Check({popout={x=120, y=240}}, nil)
 assert(legacy.popoutPosY == 214, '舊版位置遷移不相容')
+local scaledLegacy = Check({popout={x=120,y=240}}, nil, nil, false, nil, nil, 1.2)
+assert(scaledLegacy.popoutPosX == 100 and scaledLegacy.popoutPosY == 174, '縮放下的舊本體座標遷移不相容')
 for _, value in ipairs({math.huge, -math.huge, 0/0}) do
     local settings = Check({popout={x=value, y=42, anchor='header'}}, '["popout"]=', 'POSITION_DATA_INVALID')
     assert(settings.popoutPosX == nil, '非有限座標未排除')

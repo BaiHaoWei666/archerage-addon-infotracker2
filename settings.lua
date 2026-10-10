@@ -5,7 +5,7 @@ local Items = ITV2.Items
 
 local SAVE_KEY = "itv2_settings"
 local SAVE_VERSION = 2
-local COORD_SPACE_EFFECTIVE = "effective"
+local COORD_SPACE_UI = "ui"
 local LEGACY_HEADER_HEIGHT = 26   -- 舊存檔（記本體位置）換算用
 local positionDiagnostic
 local DIAGNOSTIC_BYTES = 4320
@@ -96,7 +96,7 @@ function S.ReportLoadedPosition(actualX, actualY)
     if report == nil then return end
     if report.reason == nil then
         actualX, actualY = Coordinate(actualX), Coordinate(actualY)
-        -- GetEffectiveOffset 與存檔皆為有效座標，容許 1 像素的取整誤差。
+        -- GetOffset 與存檔皆為 UI 座標，容許 1 單位的取整誤差。
         if actualX ~= nil and actualY ~= nil
             and math.abs(actualX - report.x) <= 1 and math.abs(actualY - report.y) <= 1 then return end
         report.reason = "POSITION_APPLY_MISMATCH"
@@ -132,7 +132,7 @@ S.orderByCat = {}     -- { [catKey] = { itemKey, ... } }：項目順序
 S.pageOrder = {}      -- { CATEGORIES 索引, ... }：分類順序（設定窗口頁籤與懸浮窗切頁共用）
 S.pageDisabled = {}   -- { [catKey] = true }：面板設定關掉的分類（懸浮窗切頁時跳過）
 S.popoutPage = 1      -- 懸浮窗目前的分類（CATEGORIES 索引）
-S.popoutPosX = nil    -- 懸浮窗標題欄位置（effective 座標）
+S.popoutPosX = nil    -- 懸浮窗標題欄相對 UIParent 的 UI 座標
 S.popoutPosY = nil
 S.squadInvite = false -- 建立戰隊詢問窗的「邀請隊伍成員」，記住上次的選擇
 S.panel = {}          -- { [PANEL_SETTINGS.key] = 數值 }
@@ -355,7 +355,7 @@ function S.Save()
         disabledPages = KeysOf(S.pageDisabled),
         x = S.popoutPosX,
         y = S.popoutPosY,
-        coordSpace = COORD_SPACE_EFFECTIVE,
+        coordSpace = COORD_SPACE_UI,
         anchor = "header",
     }
     for _, def in ipairs(S.PANEL_SETTINGS) do
@@ -434,9 +434,15 @@ local function LoadPopout(popout)
 
     S.popoutPosX = Coordinate(popout.x)
     S.popoutPosY = Coordinate(popout.y)
+    -- 舊 effective 或未標記存檔以顯示座標還原；anchor 與 ui 均記錄 GetOffset。
+    if popout.coordSpace ~= COORD_SPACE_UI and popout.coordSpace ~= "anchor" then
+        local scale = ITV2.GetUiScale()
+        if S.popoutPosX ~= nil then S.popoutPosX = Coordinate(S.popoutPosX / scale) end
+        if S.popoutPosY ~= nil then S.popoutPosY = Coordinate(S.popoutPosY / scale) end
+    end
     -- 舊存檔記的是本體左上角；現在記標題欄，往上移一個標題欄高度保持畫面位置不變
     if popout.anchor ~= "header" and S.popoutPosY ~= nil then
-        S.popoutPosY = Coordinate(S.popoutPosY - LEGACY_HEADER_HEIGHT * ITV2.GetUiScale())
+        S.popoutPosY = Coordinate(S.popoutPosY - LEGACY_HEADER_HEIGHT)
     end
 end
 

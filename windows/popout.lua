@@ -56,8 +56,9 @@ header:SetUILayer("game")
 local function AnchorHeader()
     header:RemoveAllAnchors()
     if S.popoutPosX ~= nil and S.popoutPosY ~= nil then
-        -- 實機 150% UI 下，GetEffectiveOffset 可直接交回 AddAnchor；再除倍率會使位置縮小。
-        header:AddAnchor("TOPLEFT", "UIParent", S.popoutPosX, S.popoutPosY)
+        -- GetOffset 回傳 UI 座標，AddAnchor 接受套用倍率後的顯示座標。
+        local scale = ITV2.GetUiScale()
+        header:AddAnchor("TOPLEFT", "UIParent", S.popoutPosX * scale, S.popoutPosY * scale)
     else
         header:AddAnchor("TOPLEFT", "UIParent", DEFAULT_X, DEFAULT_Y)
     end
@@ -71,10 +72,10 @@ local function CanDragHeader()
 end
 
 UI.EnableWindowDrag(header, header, CanDragHeader, function(self)
-    local x, y = self:GetEffectiveOffset()
+    -- 原生拖曳已完成定位；只保存 UI 座標，避免放開時重新錨定造成縮放跳位。
+    local x, y = self:GetOffset()
     S.popoutPosX = tonumber(x) or S.popoutPosX
     S.popoutPosY = tonumber(y) or S.popoutPosY
-    AnchorHeader()
     S.Save()
 end)
 
@@ -505,9 +506,9 @@ body:SetHandler("OnUpdate", function(self, dt)
     end
 end)
 
--- 回傳標題欄的有效座標，與位置存檔使用相同座標系。
+-- 回傳標題欄的 UI 座標，與位置存檔使用相同座標系。
 function Popout.GetPosition()
-    return header:GetEffectiveOffset()
+    return header:GetOffset()
 end
 
 -- 載入設定後呼叫
